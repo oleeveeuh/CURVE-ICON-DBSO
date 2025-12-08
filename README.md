@@ -373,12 +373,6 @@ extraxt_UPDRS.py, HFO_feature_extraction.py
 - Realistic expectation management
 - DBS programming parameter guidance
 - Cost reduction (avoiding non-responders)
-
-**Market Context:**
-- DBS market: $1.5B globally, 8% annual growth
-- 150,000+ eligible Parkinson's patients annually
-- 10-15% outcome improvement = $150M+ potential value
-
 ---
 
 ## Limitations & Future Work
