@@ -1,4 +1,4 @@
-# Deep Brain Stimulation Response Prediction Using Multi-Modal Neural and Clinical Biomarkers
+# Deep Brain Stimulation Outcome Prediction Using HFOs and Clinical Biomarkers
 
 ---
 
