@@ -1,22 +1,12 @@
 # Deep Brain Stimulation Response Prediction Using Multi-Modal Neural and Clinical Biomarkers
 
-**Author:** Olivia Liau | **Data Source:** USC DABI Initiative | **Status:** Production-Ready
-
 ---
 
 ## Executive Summary
 
-Developed a machine learning regression pipeline to predict individual Deep Brain Stimulation (DBS) treatment outcomes in Parkinson's Disease patients. The system integrates 18 neural biomarkers from intraoperative electrocorticography with 80+ engineered clinical features to predict continuous UPDRS improvement percentages (9-51% range).
+Developed a machine learning regression pipeline to predict individual Deep Brain Stimulation (DBS) treatment outcomes in Parkinson's Disease patients. The system integrates 18 neural biomarkers from intraoperative electrocorticography with 80+ engineered clinical features to predict continuous UPDRS improvement percentages (9-51% range). 
 
-**Key Innovation:** Regression approach predicting exact improvement percentages (e.g., "37% ± 8%") versus binary classification (responder/non-responder), retaining 3-5x more clinical information and enabling personalized treatment planning.
-
-**Data:** USC DABI Initiative - 8 subjects with complete multi-modal data (ECoG neural recordings + clinical motor assessments + structural neuroimaging)
-
-**Quick Start:**
-```bash
-python complete_integrated_pipeline.py                          # 2 min - Train models
-python integrated_comprehensive_visualization_REGRESSION.py     # 1 min - Generate 7 figures
-```
+**Key Innovation:** Regression approach predicting exact improvement percentages (e.g., "37% ± 8%") versus binary classification (responder/non-responder), retaining 3-5x more clinical information and enabling personalized treatment planning. Demonstrates end-to-end data science capability with emphasis on feature engineering expertise - transforming raw multi-modal biomedical data into 108 interpretable features, then systematically selecting 15 optimal predictors to achieve clinically actionable predictions with rigorous validation.
 
 ---
 
@@ -285,35 +275,48 @@ leaked_features = [col for col in features if any(excl in col.lower()
 
 ---
 
-## Technical Implementation
+## Core Skills & Technical Expertise
 
-### Core Technologies
+### Machine Learning & Explainable AI
+- Scikit-learn (Random Forest, Gradient Boosting, Linear Regression)  
+- SHAP explainability with directional feature effects  
+- GroupKFold cross-validation for repeated measures  
+- Small-sample ML techniques for n ≈ 8  
+- Feature engineering from UPDRS subscores (80+ clinically interpretable features)  
+- Multi-modal integration of neural signals, clinical assessments, and neuroimaging  
 
-**Machine Learning:**
-- Scikit-learn (Random Forest, Gradient Boosting, Linear Regression)
-- SHAP (explainable AI with directional feature effects)
-- GroupKFold cross-validation (prevents data leakage from repeated measures)
+### Statistical Modeling & Validation
+- Mixed-effects models (Statsmodels)  
+- Small-sample statistical analysis and interpretation  
+- Effect size quantification and clinical significance metrics  
+- Bootstrap confidence intervals  
+- Partial dependence plots for non-linear relationships  
 
-**Statistical Analysis:**
-- Statsmodels (mixed-effects regression for repeated measures)
-- Partial dependence plots (non-linear feature relationships)
-- Bootstrap confidence intervals
+### Signal Processing & Neural Data Analysis
+- FFT-based HFO extraction (NumPy/SciPy)  
+- Bipolar re-referencing and artifact reduction  
+- Bandpass filtering (80–500 Hz)  
+- Biomedical signal interpretation and feature computation  
 
-**Signal Processing:**
-- NumPy/SciPy (FFT for HFO extraction)
-- Bipolar re-referencing (artifact reduction)
-- Bandpass filtering (80-500 Hz isolation)
+### Visualization
+- Publication-quality figure generation (Matplotlib/Seaborn, 300 DPI)  
+- Multi-panel scientific visualizations  
+- Correlation matrices, model diagnostics, annotated clinical plots  
+- Clean aesthetic formatting (consistent color palettes, no grid artifacts)  
 
-**Visualization:**
-- Matplotlib/Seaborn (7-figure publication suite at 300 DPI)
-- Professional formatting (no grid artifacts, correlation annotations)
+### Clinical & Neuroscience Domain Knowledge
+- UPDRS-derived clinical metrics (asymmetry indices, phenotype classification)  
+- Neuroscience interpretation of cortical thickness and DBS outcomes  
+- HFO physiology and intracranial recording characteristics  
+- Regulatory considerations for clinical ML (FDA requirements for explainability and validation)
+
+---
 
 ### Code Architecture
 
 ```
-Pipeline Structure (1,800+ lines production code):
 
-complete_integrated_pipeline.py (768 lines)
+run_pipeline.py (768 lines)
 ├─ Data loading & validation
 ├─ Feature engineering (80+ clinical features)
 ├─ Neural biomarker extraction (18 HFO features)
@@ -323,7 +326,7 @@ complete_integrated_pipeline.py (768 lines)
 ├─ SHAP analysis (directional effects)
 └─ Output generation (9 CSV files, 1 summary report)
 
-integrated_comprehensive_visualization_REGRESSION.py (1,008 lines)
+visualization.py (1,008 lines)
 ├─ Data loading (predictions, metrics, importance)
 ├─ Figure 1: Model performance diagnostics
 ├─ Figure 2: Clinical predictions
@@ -333,45 +336,9 @@ integrated_comprehensive_visualization_REGRESSION.py (1,008 lines)
 ├─ Figure 6: Partial dependence plots
 └─ Figure 7: Statistical analysis
 
-EXPANDED_UPDRS_EXTRACTION.py
+extraxt_UPDRS.py, HFO_feature_extraction.py
 └─ Clinical feature engineering (asymmetry, phenotypes, composites)
 ```
-
-**Key Software Engineering Practices:**
-- Modular functions with single responsibility
-- Comprehensive error handling and validation
-- Automated data leakage detection
-- Fixed random seeds (reproducibility)
-- Extensive inline documentation
-- Type hints and docstrings
-
----
-
-## Skills Demonstrated for Employers
-
-### Data Science & Machine Learning
-- **Feature Engineering:** Transformed 33 UPDRS subscores into 80+ interpretable clinical features using domain knowledge
-- **Small-Sample ML:** Appropriate techniques for n=8 (avoid overfitting, proper CV, conservative model complexity)
-- **Explainable AI:** SHAP implementation with directional interpretation for clinical stakeholders
-- **Multi-Modal Integration:** Fused neural signals, clinical assessments, and neuroimaging into unified feature space
-
-### Statistical Expertise
-- **Proper Validation:** GroupKFold CV preventing data leakage from repeated measures
-- **Mixed-Effects Models:** Accounting for subject-level clustering in repeated recordings
-- **Small-Sample Statistics:** Appropriate metrics and interpretation for pilot studies
-- **Effect Size Quantification:** Clinical significance alongside statistical significance
-
-### Domain Knowledge
-- **Clinical Translation:** Converting UPDRS subscores into clinically interpretable asymmetry indices and phenotype classifications
-- **Biomedical Signal Processing:** HFO extraction from multi-channel ECoG with artifact rejection
-- **Neuroscience Interpretation:** Understanding cortical thickness effects on DBS efficacy
-- **Regulatory Awareness:** FDA considerations for medical ML (explainability, validation)
-
-### Software Engineering
-- **Production Code:** 1,800+ lines with professional standards (modularity, error handling, documentation)
-- **Automated Validation:** Built-in data leakage detection preventing target variable contamination
-- **Reproducibility:** Complete documentation enabling independent replication
-- **Visualization Pipeline:** Automated generation of 7 publication-quality figures
 
 ---
 
@@ -414,59 +381,6 @@ EXPANDED_UPDRS_EXTRACTION.py
 
 ---
 
-## Repository Structure
-
-```
-outputs/
-├── Scripts (3 files - 1,800+ lines total)
-│   ├── complete_integrated_pipeline.py
-│   ├── integrated_comprehensive_visualization_REGRESSION.py
-│   └── EXPANDED_UPDRS_EXTRACTION.py
-│
-├── Data Outputs (9 CSV files)
-│   ├── complete_integrated_dataset.csv
-│   ├── feature_importance_complete.csv
-│   ├── shap_importance.csv
-│   ├── shap_values.csv
-│   ├── model_predictions.csv
-│   ├── model_performance_metrics.csv
-│   ├── prediction_scatter_data.csv
-│   ├── confusion_matrix_*.csv (3 files)
-│   └── analysis_summary.txt
-│
-├── Figures (7 PNG files - 300 DPI)
-│   ├── Integrated_01_ModelPerformance_REGRESSION.png
-│   ├── Integrated_02_ClinicalPredictions_REGRESSION.png
-│   ├── Integrated_03_FeatureAnalysis_REGRESSION.png
-│   ├── Integrated_04_ClinicalContext_REGRESSION.png
-│   ├── Integrated_05_PublicationSummary_REGRESSION.png
-│   ├── Integrated_06_PartialDependence_REGRESSION.png
-│   └── Integrated_07_StatisticalAnalysis_REGRESSION.png
-│
-└── Documentation (4 guides)
-    ├── README_PROFESSIONAL.md (this file)
-    ├── EXECUTIVE_SUMMARY.md
-    ├── COMPLETE_REGRESSION_GUIDE.md
-    └── QUICK_START_REGRESSION.md
-```
-
----
-
-## Execution Instructions
-
-```bash
-# Complete workflow (3 minutes)
-python complete_integrated_pipeline.py                          # Train models
-python integrated_comprehensive_visualization_REGRESSION.py     # Generate figures
-
-# Dependencies
-pip install numpy pandas scikit-learn matplotlib seaborn shap statsmodels
-```
-
-**System Requirements:** Python 3.8+, standard laptop (no GPU needed)
-
----
-
 ## Limitations & Future Work
 
 **Current Limitations:**
@@ -481,32 +395,9 @@ pip install numpy pandas scikit-learn matplotlib seaborn shap statsmodels
 - Additional biomarker modalities (genetics, proteomics)
 - Longitudinal outcome tracking (multi-year follow-up)
 
-**Publication Target:** Movement Disorders, Journal of Neural Engineering (Q1 2025 submission)
-
 ---
 
-## Contact & Portfolio
-
-**Available for Review:**
-- Complete documented codebase
-- Live demonstration
-- Technical deep-dive presentation
-- Methodology discussion
-
-**Suitable For:**
-- GitHub repository README
-- Job application portfolio
-- Graduate school applications
-- Publication supplementary materials
-- Technical interview preparation
+## Data Availability:
+The data used in this study was gathered as part of the USC DABI Initiative and accessed through the Informatics and Computing in Neuroscience (ICON) Lab at USC.
 
 ---
-
-**Key Takeaway:** This project demonstrates end-to-end data science capability with emphasis on feature engineering expertise - transforming raw multi-modal biomedical data into 108 interpretable features, then systematically selecting 15 optimal predictors to achieve clinically actionable predictions with rigorous validation.
-
----
-
-**Version:** 2.1 (Concise, Visualization-Rich)  
-**Author:** Olivia Liau  
-**Data:** USC DABI Initiative  
-**Status:** Production-Ready
