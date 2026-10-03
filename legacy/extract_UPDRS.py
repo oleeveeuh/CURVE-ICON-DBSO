@@ -1,3 +1,22 @@
+"""[ARCHIVED — SUPERSEDED, KNOWN BUGGY]
+
+This script is retained for provenance only. It is superseded by
+src/curve_icon_dbso/ and scripts/. Known defects, documented in
+docs/methodology.md and README.md:
+
+* Saved predictions were written in fold order and paired with
+  subjects/targets in original row order, so reported per-subject
+  results and saved metrics were misaligned (all figures generated
+  from this pipeline report invalid metrics).
+* Feature selection, imputation and scaling were fit on the full
+  dataset before cross-validation (leakage).
+* run_pipeline.py silently substituted RANDOM placeholder HFO
+  features when the aggregated HFO file was missing.
+* Broad ``except`` blocks turned extraction failures into zeros.
+
+Do NOT run this script and do NOT cite numbers produced by it.
+"""
+
 #!/usr/bin/env python3
 """
 EXPANDED UPDRS EXTRACTION: All Metadata + Multiple Recordings
@@ -32,8 +51,8 @@ print("=" * 100)
 # CONFIGURATION
 # ============================================================================
 
-DATA_DIR = Path('/Users/olivialiau/Downloads/data for olivia/')
-OUTPUT_DIR = Path('/Users/olivialiau/Downloads/data for olivia/')
+DATA_DIR = Path('<PRIVATE_DATA_DIR>/')
+OUTPUT_DIR = Path('<PRIVATE_DATA_DIR>/')
 
 UPDRS_FILE = DATA_DIR / 'UPDRS_data.csv'
 ECOG_FILE = DATA_DIR / 'ECoG_localization.xlsx'
@@ -375,10 +394,10 @@ RECOMMENDED FOR YOUR PROJECT:
 
 KEY INSIGHT:
 Your subjects with multiple recordings have DIFFERENT REST/MOVE states:
-  • DBS_bG20: Recording 1 vs Recording 2 differ
-  • DBS_bG14: Recording 1 vs Recording 2 differ
-  • DBS_bG57: Recording 1 vs Recording 2 differ
-  • DBS_bG59: Recording 1 vs Recording 2 differ
+  • SUBJ_CODE: Recording 1 vs Recording 2 differ
+  • SUBJ_CODE: Recording 1 vs Recording 2 differ
+  • SUBJ_CODE: Recording 1 vs Recording 2 differ
+  • SUBJ_CODE: Recording 1 vs Recording 2 differ
 
 This is VALUABLE DATA! Different neural states → different outcomes
 Machine learning can learn this pattern!

@@ -1,3 +1,22 @@
+"""[ARCHIVED — SUPERSEDED, KNOWN BUGGY]
+
+This script is retained for provenance only. It is superseded by
+src/curve_icon_dbso/ and scripts/. Known defects, documented in
+docs/methodology.md and README.md:
+
+* Saved predictions were written in fold order and paired with
+  subjects/targets in original row order, so reported per-subject
+  results and saved metrics were misaligned (all figures generated
+  from this pipeline report invalid metrics).
+* Feature selection, imputation and scaling were fit on the full
+  dataset before cross-validation (leakage).
+* run_pipeline.py silently substituted RANDOM placeholder HFO
+  features when the aggregated HFO file was missing.
+* Broad ``except`` blocks turned extraction failures into zeros.
+
+Do NOT run this script and do NOT cite numbers produced by it.
+"""
+
 """
 ================================================================================
 INTEGRATED COMPREHENSIVE VISUALIZATION SUITE - REGRESSION
@@ -58,7 +77,7 @@ print("="*100)
 # CONFIGURATION
 # ============================================================================
 
-DATA_DIR = Path('/Users/olivialiau/Downloads/data for olivia/outputs/')
+DATA_DIR = Path('<PRIVATE_DATA_DIR>/outputs/')
 OUTPUT_DIR = DATA_DIR / 'figures/'
 OUTPUT_DIR.mkdir(exist_ok=True)
 

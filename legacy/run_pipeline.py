@@ -1,3 +1,22 @@
+"""[ARCHIVED — SUPERSEDED, KNOWN BUGGY]
+
+This script is retained for provenance only. It is superseded by
+src/curve_icon_dbso/ and scripts/. Known defects, documented in
+docs/methodology.md and README.md:
+
+* Saved predictions were written in fold order and paired with
+  subjects/targets in original row order, so reported per-subject
+  results and saved metrics were misaligned (all figures generated
+  from this pipeline report invalid metrics).
+* Feature selection, imputation and scaling were fit on the full
+  dataset before cross-validation (leakage).
+* run_pipeline.py silently substituted RANDOM placeholder HFO
+  features when the aggregated HFO file was missing.
+* Broad ``except`` blocks turned extraction failures into zeros.
+
+Do NOT run this script and do NOT cite numbers produced by it.
+"""
+
 """
 ================================================================================
 COMPLETE INTEGRATED DBS ANALYSIS
@@ -68,8 +87,8 @@ print()
 # ============================================================================
 
 # Adjust these paths to your data location
-DATA_DIR = Path('/Users/olivialiau/Downloads/data for olivia/')
-OUTPUT_DIR = Path('/Users/olivialiau/Downloads/data for olivia/outputs/')
+DATA_DIR = Path('<PRIVATE_DATA_DIR>/')
+OUTPUT_DIR = Path('<PRIVATE_DATA_DIR>/outputs/')
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 UPDRS_FILE = DATA_DIR / 'UPDRS_data.csv'
@@ -157,8 +176,8 @@ else:
     print("    Note: Use your HFO aggregation script first if raw data available")
     # Create placeholder for demonstration
     hfo = pd.DataFrame({
-        'subject': ['DBS_bG18', 'DBS_bG20', 'DBS_bG21', 'DBS_bG25', 
-                   'DBS_bG26', 'DBS_bG38', 'DBS_bG65', 'DBS_bG67'],
+        'subject': ['SUBJ_CODE', 'SUBJ_CODE', 'SUBJ_CODE', 'SUBJ_CODE', 
+                   'SUBJ_CODE', 'SUBJ_CODE', 'SUBJ_CODE', 'SUBJ_CODE'],
         'hfo_power_mean': np.random.randn(8),
         'hfo_peak_freq_mean': np.random.randn(8)
     })

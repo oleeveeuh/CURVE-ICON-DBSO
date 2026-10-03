@@ -1,3 +1,22 @@
+"""[ARCHIVED — SUPERSEDED, KNOWN BUGGY]
+
+This script is retained for provenance only. It is superseded by
+src/curve_icon_dbso/ and scripts/. Known defects, documented in
+docs/methodology.md and README.md:
+
+* Saved predictions were written in fold order and paired with
+  subjects/targets in original row order, so reported per-subject
+  results and saved metrics were misaligned (all figures generated
+  from this pipeline report invalid metrics).
+* Feature selection, imputation and scaling were fit on the full
+  dataset before cross-validation (leakage).
+* run_pipeline.py silently substituted RANDOM placeholder HFO
+  features when the aggregated HFO file was missing.
+* Broad ``except`` blocks turned extraction failures into zeros.
+
+Do NOT run this script and do NOT cite numbers produced by it.
+"""
+
 #!/usr/bin/env python3
 """
 IMPROVED HFO EXTRACTION: Proper folder-per-subject structure
@@ -25,7 +44,7 @@ print("=" * 80)
 
 print("\n1. Finding subject folders...")
 
-data_folder = '/Users/olivialiau/Downloads/data for olivia/all_subs_preprocessed_data'
+data_folder = '<PRIVATE_DATA_DIR>/all_subs_preprocessed_data'
 
 if not os.path.exists(data_folder):
     print(f"✗ Folder not found: {data_folder}")
@@ -42,7 +61,7 @@ for item in os.listdir(data_folder):
         # Try to extract subject ID from folder name
         folder_name = item.strip()
         
-        # Common patterns: DBS_bG01, DBS_bG01_processed, etc.
+        # Common patterns: SUBJ_CODE, SUBJ_CODE, etc.
         # Extract the base subject ID
         subject_id = folder_name
         
@@ -244,7 +263,7 @@ if failed_subjects:
 print(f"\n4. Saving results...")
 
 hfo_df = pd.DataFrame(all_hfo_features)
-output_file = '/Users/olivialiau/Downloads/data for olivia/HFO_features.csv'
+output_file = '<PRIVATE_DATA_DIR>/HFO_features.csv'
 hfo_df.to_csv(output_file, index=False)
 
 print(f"✓ Saved to: {output_file}")
