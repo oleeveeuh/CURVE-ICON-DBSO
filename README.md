@@ -1,397 +1,228 @@
-# Deep Brain Stimulation Outcome Prediction Using HFOs and Clinical Biomarkers
+# CURVE-ICON-DBSO
+
+**CURVE** — expansion not documented in the repository *[to be supplied by the owner]* ·
+**ICON** — Informatics and Computing in Neuroscience Lab, USC ·
+**DBSO** — Deep Brain Stimulation Outcome (prediction)
+
+An exploratory, subject-grouped machine-learning analysis asking whether
+intraoperative ECoG high-frequency oscillations (HFOs) and clinical measures carry
+any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 subjects
+(9 recordings)**.
+
+> ### ⚠️ Exploratory research prototype — not for clinical use
+> Retrospective, single-center, n = 8. No valid study performance estimate exists in
+> this repository: the historical results were invalidated by a prediction-alignment
+> bug plus data leakage, and the only runnable results here are on **synthetic**
+> verification data. Nothing here supports clinical decision-making, counseling,
+> patient selection, or DBS programming.
 
 ---
 
-## Executive Summary
+## What this repository is (30 seconds)
 
-Developed a machine learning regression pipeline to predict individual Deep Brain Stimulation (DBS) treatment outcomes in Parkinson's Disease patients. The system integrates 18 neural biomarkers from intraoperative electrocorticography with 80+ engineered clinical features to predict continuous UPDRS improvement percentages (9-51% range). 
+- **Question:** can HFO + clinical features relate to motor improvement (% UPDRS
+  change) after DBS, measurable at pilot scale? *(Answer at this sample size: not
+  reliably — and that is the honest result.)*
+- **Data:** restricted USC DABI clinical + ECoG + imaging data, **not distributed
+  here**; all runnable code paths are verified on deterministic synthetic data.
+- **Correction story:** the original pipeline reported R² = 0.713 (README) while its
+  own figures showed −0.672. Root cause found: fold-order predictions saved against
+  original-row-order subjects. This repository contains the corrected evaluation,
+  tests that pin it, and the invalid figures archived as documentation.
+- **Status:** research prototype; negative/feasibility results expected and preserved.
 
-**Key Innovation:** Regression approach predicting exact improvement percentages (e.g., "37% ± 8%") versus binary classification (responder/non-responder), retaining 3-5x more clinical information and enabling personalized treatment planning. Demonstrates end-to-end data science capability with emphasis on feature engineering expertise - transforming raw multi-modal biomedical data into 108 interpretable features, then systematically selecting 15 optimal predictors to achieve clinically actionable predictions with rigorous validation.
+## Research question
 
----
+Do resting/task ECoG HFO features recorded from sensorimotor cortex, together with
+routine clinical measures, carry measurable association with the magnitude of motor
+improvement after DBS — and can any such association survive honest,
+subject-grouped validation at n = 8? (See [docs/methodology.md](docs/methodology.md).)
 
-## Results at a Glance
+## Dataset and cohort
 
-### Model Performance
+| Item | Value |
+|---|---|
+| Source | USC DABI (Data Archive for the BRAIN Initiative), via the ICON Lab — **restricted; see [docs/data_access.md](docs/data_access.md)** |
+| Modalities | UPDRS assessments (pre/post) · intracranial ECoG + recording metadata · cortical thickness (MRI) · HFO features |
+| Cohort | **8 unique subjects, 9 recordings** — one subject contributes 2 recordings (REST + MOVE); remaining subjects contribute 1 |
+| Counts in results | Every result reports both subject and recording counts |
+| Privacy | No participant data, subject identifiers, raw signals, or per-subject outputs are committed; `data/`, `outputs/`, `*.csv`, `*.mat` are gitignored |
 
-![Figure 1: Model Performance](./figures/Integrated_01_ModelPerformance_REGRESSION.png)
-*Scatter plots showing predicted vs actual improvement for three regression models, with residual analysis*
+The 8/9 structure comes from tracked historical artifacts and is marked unverified
+against the source data.
 
-| Model | R² Score | RMSE (%) | MAE (%) | Correlation | Interpretation |
-|-------|----------|----------|---------|-------------|----------------|
-| **Random Forest** | **0.713** | **18.3** | **13.4** | **0.756** | Best overall - strong predictive power |
-| Gradient Boosting | 0.845 | 21.8 | 15.1 | 0.581 | High R² but larger errors |
-| Linear Regression | -0.957 | 26.8 | 15.0 | -0.196 | Poor fit - non-linear data |
+![Cohort and modality flow](figures/cohort_modality_flow.png)
 
-**Best Model:** Random Forest achieves 71% variance explained with average prediction error of 13.4 percentage points.
+## Pipeline architecture
 
-**Clinical Translation:** Predictions within ±10% for 67% of patients, enabling confident pre-operative counseling.
+![Pipeline architecture](figures/pipeline_architecture.png)
 
-### Individual Patient Predictions
+## Implemented feature extraction (complete list)
 
-![Figure 2: Clinical Predictions](./figures/Integrated_02_ClinicalPredictions_REGRESSION.png)
-*Subject-level predictions with true values, error analysis, and derived classification performance*
+Per ECoG channel ([`src/curve_icon_dbso/hfo.py`](src/curve_icon_dbso/hfo.py)):
 
-**Example Clinical Application:**
-```
-Patient #3 Analysis:
-├─ Predicted Improvement: 39.2% ± 7.5%
-├─ Actual Improvement: 42.5%
-├─ Prediction Error: 3.3% (Excellent)
-└─ Clinical Decision: Strong candidate - expect good response
-```
+- 4th-order zero-phase Butterworth band-pass (default **80–500 Hz**), validated
+  strictly below Nyquist;
+- Welch PSD → **band power** and **peak frequency**;
+- per-channel **QC status + failure reason** — failures are never zero-filled, and
+  there is no random/placeholder fallback anywhere.
 
----
+Per subject ([`src/curve_icon_dbso/features.py`](src/curve_icon_dbso/features.py)):
 
-## Feature Engineering & Analysis
+- mean of OK channels for the two HFO features;
+- UPDRS-derived bradykinesia / rigidity / tremor composites per side and
+  **asymmetry indices**; disease duration; age;
+- a **prespecified set of 7 features** — fixed a priori, no data-driven selection.
 
-### Comprehensive Feature Set (108 Total Features)
+**Not implemented, therefore not claimed:** phase-amplitude coupling, artifact
+rejection, SNR, stability metrics, spatial-distribution summaries, bootstrap
+confidence intervals, per-patient uncertainty. (The historical README's "18 neural
+biomarkers" and "108 features" were unsupported — artifacts show 32 engineered
+columns, 2 of them HFO-derived.)
 
-#### Neural Biomarkers (18 features from ECoG)
+## Validation design (corrected)
 
-**High-Frequency Oscillations (HFO) - 80-500 Hz Band:**
-- Power spectral density (mean, peak, variance)
-- Peak frequency and bandwidth
-- Temporal stability metrics
-- Spatial distribution across electrodes
+1. **Subjects are the evaluation units**: leave-one-subject-out CV — every fold
+   holds out *all* recordings of one subject; no recording straddles train/test.
+2. **Fold-local preprocessing**: median imputation + standardization inside an
+   sklearn `Pipeline`, fit on each training fold only. No feature selection (the 7
+   features are prespecified).
+3. **Baselines**: `DummyRegressor` mean and median through the identical procedure.
+   A model is not called useful unless it beats both.
+4. **Aligned out-of-fold predictions**: preallocated array,
+   `oof[test_idx] = pipe.predict(X_test)` — regression-tested with nonsequential
+   fold indices (`tests/test_alignment.py`).
+5. **Metrics**: MAE, RMSE, R², Pearson r + per-subject OOF predictions and errors.
+6. **No tuning**: hyperparameters are fixed and documented; nothing is optimized
+   against held-out subjects.
 
-**Phase-Amplitude Coupling:**
-- Beta-HFO coupling strength (13-30 Hz to 80-500 Hz)
-- Coupling phase consistency
-- Modulation index
+**Small-sample caveat (applies to everything below):** LOSO on 8 subjects yields
+exactly 8 held-out predictions. R² and correlation are highly unstable at this size
+(expected R² under the null is *negative*); a single subject can flip any ranking.
 
-**Electrode-Specific Features:**
-- DBS electrode localization effects
-- Left vs right hemisphere activity
-- Motor cortex vs premotor patterns
-- Parietal lobe contribution
+## Verified results
 
-**Signal Quality Metrics:**
-- Signal-to-noise ratio
-- Artifact rejection rate
-- Recording stability index
+**No valid real-data performance estimate exists.** The historical numbers
+(R² 0.713 / 0.845) were products of the misalignment + leakage defects and are
+retracted; their figures are archived under
+[`figures/archive/`](figures/archive/README.md) as documentation of the defect.
 
-#### Clinical Motor Features (80+ features from UPDRS)
+What *is* verifiable is the machinery, on synthetic data
+(`figures/synthetic_oof_verification.png`; regenerate with the quick start below —
+seeded, byte-identical across runs):
 
-**Feature Engineering Methodology:**
+| Model (LOSO, synthetic cohort) | MAE | RMSE | R² | Pearson r |
+|---|---|---|---|---|
+| Mean baseline | 5.29 | 6.37 | −0.256 | — |
+| Median baseline | 5.37 | 6.33 | −0.242 | — |
+| Linear Regression | 3.42 | 5.34 | 0.116 | 0.813 |
+| Random Forest | 4.37 | 4.92 | 0.249 | 0.556 |
+| Gradient Boosting | 4.49 | 4.72 | 0.310 | 0.561 |
 
-**1. Decomposition Strategy:**
-- UPDRS Part III total score → 33 individual subscores
-- Bradykinesia items (finger tapping, hand movements, pronation-supination, toe tapping, leg agility)
-- Rigidity items (neck, arms, legs - left/right separate)
-- Tremor items (rest, postural, kinetic - each limb)
-- Axial items (gait, freezing, postural stability, posture, body bradykinesia)
+*Synthetic data with a planted linear signal — these numbers demonstrate that the
+evaluation is correctly aligned and leakage-controlled; they say nothing about real
+DBS outcomes.* All three models beat both baselines here **by construction** (the
+generator plants a learnable signal); with 8 real subjects the honest expectation is
+a null or uninterpretable result, and the corrected pipeline is designed to show
+that rather than hide it.
 
-**2. Asymmetry Indices:**
-```
-Left-Right Asymmetry = (Left_Score - Right_Score) / (Left_Score + Right_Score)
-```
-- Bradykinesia asymmetry
-- Rigidity asymmetry  
-- Tremor asymmetry
-- Upper vs lower limb asymmetry
+![Synthetic OOF verification](figures/synthetic_oof_verification.png)
 
-**3. Phenotype Classification:**
-- **Tremor-Dominant Score:** Weighted tremor subscores
-- **Akinetic-Rigid Score:** Weighted bradykinesia + rigidity subscores
-- **PIGD Score:** Postural instability and gait difficulty subscores
-- **Tremor/PIGD Ratio:** Phenotype classification index
+## Why n = 8 cannot establish clinical utility
 
-**4. Severity Stratification:**
-- Mild items (score 0-1)
-- Moderate items (score 2-3)
-- Severe items (score 4)
-- Proportion in each category
+- Eight held-out predictions give confidence intervals so wide that no model
+  comparison is meaningful; R² can be negative for a genuinely informative model.
+- Selection effects from requiring complete multi-modal data are unquantified.
+- REST vs MOVE, anesthesia, and medication state confounds are unmodeled.
+- Any "top feature" ranking at this n is noise; the pipeline therefore refuses to
+  rank features. See [docs/limitations.md](docs/limitations.md).
 
-**5. Functional Composite Scores:**
-- Upper limb composite (bradykinesia + rigidity + tremor)
-- Lower limb composite (leg agility + gait + stability)
-- Axial composite (posture + stability + freezing)
-- Global motor composite (weighted sum)
+## Quick start (offline, no data required)
 
-**6. Temporal Features:**
-- Disease duration (years since diagnosis)
-- Age at surgery
-- Disease duration × age interaction
-- Progression rate estimates
+```bash
+git clone https://github.com/oleeveeuh/CURVE-ICON-DBSO.git
+cd CURVE-ICON-DBSO
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
 
-#### Structural Brain Features (7 features from MRI)
+# deterministic synthetic end-to-end run (~seconds)
+curve-icon-demo --output-dir outputs/synthetic_demo
 
-**Cortical Thickness Measurements:**
-- Thickness at DBS electrode contact points (left/right)
-- Motor cortex thickness (M1)
-- Premotor cortex thickness
-- Parietal cortex thickness
-
-**Electrode Localization:**
-- Stereotactic coordinates (x, y, z)
-- Distance from optimal target
-- Cortical coverage area
-
-#### Metadata Features (3 features)
-
-- DBS stimulation voltage
-- DBS stimulation frequency
-- Levodopa equivalent daily dose (LEDD)
-
-### Feature Importance Analysis
-
-![Figure 3: Feature Analysis](./figures/Integrated_03_FeatureAnalysis_REGRESSION.png)
-*SHAP importance rankings with directional effects, feature type breakdown, and correlation analysis*
-
-**Top 10 Predictive Features (SHAP Analysis):**
-
-| Rank | Feature | Type | SHAP Value | Direction | Clinical Interpretation |
-|------|---------|------|------------|-----------|-------------------------|
-| 1 | cortical_yeo_thickness_y | Structural | 6.4017 | ↓ Lower Improvement | Thicker cortex → worse outcome |
-| 2 | cortical_yeo_thickness_x | Structural | 3.2907 | ↓ Lower Improvement | Bilateral thickness effect |
-| 3 | HFO_power_mean | Neural | 1.4204 | ↑ Higher Improvement | Higher HFO → better outcome |
-| 4 | age_x | Metadata | 1.1559 | ↓ Lower Improvement | Older age → reduced benefit |
-| 5 | hfo_peak_freq_mean | Neural | 0.7771 | ↑ Higher Improvement | Peak frequency correlate |
-| 6 | cortical_sf_thickness_y | Structural | 0.7601 | ↓ Lower Improvement | Sensory cortex thickness |
-| 7 | parc_local | Clinical | 0.6331 | Variable | Local motor signs |
-| 8 | Disease_Duration | Clinical | 0.3504 | ↓ Lower Improvement | Longer disease → worse outcome |
-| 9 | years_since_diagnosis | Clinical | 0.3301 | ↓ Lower Improvement | Progression marker |
-| 10 | task_flanker | Clinical | 0.3032 | ↑ Higher Improvement | Cognitive reserve |
-
-**Feature Type Contribution:**
-- Clinical (UPDRS): 73.7% of total importance
-- Structural (MRI): 12.7% of total importance
-- Neural (ECoG): 13.5% of total importance
-- Metadata: 0.1% of total importance
-
-**Novel Findings:**
-1. **Cortical thickness inverse relationship:** Lower thickness at electrode sites predicts better outcomes (potential structural optimization)
-2. **HFO power validation:** Confirms neural oscillation biomarker hypothesis
-3. **Disease duration threshold:** Non-linear decline after 8 years
-4. **Asymmetry paradox:** Greater asymmetry predicts better unilateral DBS response
-
-### Feature Selection Pipeline
-
-**Step 1: Initial Pool (108 features)**
-- 18 neural biomarkers from ECoG
-- 80+ clinical features from UPDRS decomposition
-- 7 structural features from MRI
-- 3 metadata features
-
-**Step 2: Quality Filtering**
-- Remove features with >30% missing values
-- Remove zero-variance features
-- Remove post-operative variables (prevent data leakage)
-
-**Step 3: Correlation Analysis**
-- Identify highly correlated features (r > 0.9)
-- Retain clinically interpretable feature from each cluster
-- Reduces multicollinearity
-
-**Step 4: Random Forest Importance Ranking**
-- Train preliminary RF model on all features
-- Rank by feature importance
-- Select top 33 features (above median importance)
-
-**Step 5: SHAP-Based Refinement**
-- Compute SHAP values for top 33 features
-- Identify directional effects
-- Final selection: Top 15 features for production models
-
-**Data Leakage Prevention:**
-```python
-# Automated validation system
-exclude_cols = [
-    'UPDRS_Improvement',           # Target variable
-    'UPDRS_improvement',           # Case variation
-    'updrs_improvement',           # Alternative naming
-    'postop_updrs_total',          # Post-operative score
-    'postop_updrs',                # Alternative post-op
-    'Responder',                   # Derived target
-]
-
-# Validation check
-leaked_features = [col for col in features if any(excl in col.lower() 
-                   for excl in ['postop', 'improvement', 'responder'])]
+# regenerate README figures
+python scripts/make_figures.py
 ```
 
----
+## For authorized data users
 
-## Visualization Suite (7 Publication-Quality Figures)
+The real dataset is **not** in this repository. Obtain your own DABI/USC
+authorization, comply with the Data Use Agreement, store data locally, then:
 
-### Figure 1: Model Performance Diagnostics
-![Model Performance](./figures/Integrated_01_ModelPerformance_REGRESSION.png)
-
-**Panels:**
-- A-C: Predicted vs Actual scatter plots (3 models)
-- D: Performance metrics comparison (R², RMSE, MAE)
-- E: Residual analysis (best model)
-- F: Error distribution box plots
-
-### Figure 2: Clinical Predictions
-![Clinical Predictions](./figures/Integrated_02_ClinicalPredictions_REGRESSION.png)
-
-**Panels:**
-- A: Subject-level bar chart (true vs predicted)
-- B: Prediction error by subject
-- C: Derived classification confusion matrix
-
-### Figure 3: Feature Analysis
-![Feature Analysis](./figures/Integrated_03_FeatureAnalysis_REGRESSION.png)
-
-**Panels:**
-- Top: SHAP importance with directional arrows
-- Bottom-Left: Feature type breakdown
-- Bottom-Right: Correlation heatmap (top 10 features)
-
-### Figure 4: Clinical Context
-![Clinical Context](./figures/Integrated_04_ClinicalContext_REGRESSION.png)
-
-**Panels:**
-- A: Disease duration vs improvement scatter
-- B: Motor phenotype distribution
-- C: PCA projection colored by improvement
-
-### Figure 5: Publication Summary
-![Publication Summary](./figures/Integrated_05_PublicationSummary_REGRESSION.png)
-
-**Panels:**
-- A: Dataset overview statistics
-- B: Model performance table
-- C: Top 10 features bar chart
-- D: Key findings summary
-- E: Limitations and future directions
-
-### Figure 6: Partial Dependence Analysis
-![Partial Dependence](./figures/Integrated_06_PartialDependence_REGRESSION.png)
-
-**Panels (6 subplots):**
-- Effect curves for top 6 features
-- Confidence bands (±1 SE)
-- Trend indicators (monotonic/non-monotonic)
-
-### Figure 7: Statistical Analysis
-![Statistical Analysis](./figures/Integrated_07_StatisticalAnalysis_REGRESSION.png)
-
-**Panels:**
-- A: Mixed-effects regression table
-- B-G: Responder vs Non-responder comparisons (top 6 features)
-
----
-
-## Core Skills & Technical Expertise
-
-### Machine Learning & Explainable AI
-- Scikit-learn (Random Forest, Gradient Boosting, Linear Regression)  
-- SHAP explainability with directional feature effects  
-- GroupKFold cross-validation for repeated measures  
-- Small-sample ML techniques for n ≈ 8  
-- Feature engineering from UPDRS subscores (80+ clinically interpretable features)  
-- Multi-modal integration of neural signals, clinical assessments, and neuroimaging  
-
-### Statistical Modeling & Validation
-- Mixed-effects models (Statsmodels)  
-- Small-sample statistical analysis and interpretation  
-- Effect size quantification and clinical significance metrics  
-- Bootstrap confidence intervals  
-- Partial dependence plots for non-linear relationships  
-
-### Signal Processing & Neural Data Analysis
-- FFT-based HFO extraction (NumPy/SciPy)  
-- Bipolar re-referencing and artifact reduction  
-- Bandpass filtering (80–500 Hz)  
-- Biomedical signal interpretation and feature computation  
-
-### Visualization
-- Publication-quality figure generation (Matplotlib/Seaborn, 300 DPI)  
-- Multi-panel scientific visualizations  
-- Correlation matrices, model diagnostics, annotated clinical plots  
-- Clean aesthetic formatting (consistent color palettes, no grid artifacts)  
-
-### Clinical & Neuroscience Domain Knowledge
-- UPDRS-derived clinical metrics (asymmetry indices, phenotype classification)  
-- Neuroscience interpretation of cortical thickness and DBS outcomes  
-- HFO physiology and intracranial recording characteristics  
-- Regulatory considerations for clinical ML (FDA requirements for explainability and validation)
-
----
-
-### Code Architecture
-
+```bash
+python scripts/run_hfo_extraction.py \
+  --input-dir /your/local/path/all_subs_preprocessed_data \
+  --output-csv /your/local/outputs/hfo_channels.csv \
+  --aggregated-csv /your/local/outputs/hfo_subjects.csv \
+  --band-low 80 --band-high 500 --fs-override 1200
 ```
 
-run_pipeline.py (768 lines)
-├─ Data loading & validation
-├─ Feature engineering (80+ clinical features)
-├─ Neural biomarker extraction (18 HFO features)
-├─ Feature selection (RF importance → SHAP refinement)
-├─ Model training (3 algorithms with GroupKFold CV)
-├─ Performance evaluation (R², RMSE, MAE, correlation)
-├─ SHAP analysis (directional effects)
-└─ Output generation (9 CSV files, 1 summary report)
+Details, required citations, and DUA placeholders:
+[docs/data_access.md](docs/data_access.md).
 
-visualization.py (1,008 lines)
-├─ Data loading (predictions, metrics, importance)
-├─ Figure 1: Model performance diagnostics
-├─ Figure 2: Clinical predictions
-├─ Figure 3: Feature analysis (SHAP/RF)
-├─ Figure 4: Clinical context
-├─ Figure 5: Publication summary
-├─ Figure 6: Partial dependence plots
-└─ Figure 7: Statistical analysis
+## Tests
 
-extraxt_UPDRS.py, HFO_feature_extraction.py
-└─ Clinical feature engineering (asymmetry, phenotypes, composites)
+```bash
+pytest -q          # 39 offline tests; no private data needed
+ruff check src tests scripts
 ```
 
----
+Coverage includes: OOF alignment under nonsequential folds, subject-group
+integrity, fold-local fitting, hand-calculated metrics, HFO detection on synthetic
+signals, Nyquist violations, failure-vs-zero QC, malformed-input errors, and an
+end-to-end determinism check. CI runs the suite on Python 3.11/3.12
+([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
-## Data Architecture
+## Repository structure
 
-**Source:** USC DABI (Data Archive for the BRAIN Initiative)
+```
+src/curve_icon_dbso/   package: config, synthetic cohort, features, HFO, evaluation, reporting
+scripts/               CLI entry points (demo, HFO extraction, figure generation)
+tests/                 offline test suite (39 tests)
+configs/               example YAML configuration
+docs/                  data access, methodology, limitations
+figures/               verified figures (+ archive/ of invalid historical figures)
+legacy/                archived original scripts, known-buggy, superseded — do not run
+```
 
-**Multi-Modal Integration:**
-- **Neural:** 590 multi-channel ECoG recordings (31 subjects)
-- **Clinical:** 74 pre-operative + 26 post-operative UPDRS assessments
-- **Imaging:** Structural MRI with DBS electrode localization
-- **Final:** 8 subjects with complete data across all modalities
+## Responsible use
 
-**Preprocessing Pipeline:**
-1. Quality control (missing data, outliers, clinical plausibility)
-2. Feature engineering (asymmetry, phenotypes, composites)
-3. Neural biomarker extraction (HFO power, coupling, spatial patterns)
-4. Subject-level aggregation (multiple recordings → single feature vector)
-5. Standardization (z-score normalization)
-6. Feature selection (108 → 33 → 15 features)
+This code and its outputs are exploratory research artifacts. They must not be used
+for patient care, counseling, cohort selection, or device programming, and must not
+be presented as clinically validated. If you build on this work, preserve subject
+-grouped evaluation, report baselines, label synthetic vs real results, and keep
+participant data out of version control.
 
----
+## Realistic future work
 
-## Clinical Impact & Translation Potential
+1. Re-run the corrected pipeline under DABI authorization and publish the honest
+   n = 8 result (likely null) with per-subject OOF tables.
+2. Grow the cohort via multicenter collaboration (~10² subjects) before any model
+   comparison; pre-specify the primary analysis.
+3. Replace band-power summaries with validated, artifact-controlled HFO detection.
+4. Only then consider uncertainty quantification and interpretation tooling.
 
-**Current Clinical Practice:** Binary decision ("Will patient respond?") with 50-70% accuracy
+## Data citation and license
 
-**Our Approach:** Continuous prediction ("Patient will improve 37% ± 8%") with 71% variance explained
+- **Data:** USC DABI via the ICON Lab; exact dataset identifier, contributing
+  investigators, required citation, and DUA reference: **[to be supplied — see
+  docs/data_access.md](docs/data_access.md)**.
+- **Code license:** intentionally unset. The author must confirm institutional
+  (USC) ownership terms before a LICENSE is added; absence of a license means all
+  rights reserved by default. A code license would grant no rights to the
+  underlying clinical data.
 
-**Clinical Applications:**
-- Pre-operative patient selection and counseling
-- Realistic expectation management
-- DBS programming parameter guidance
-- Cost reduction (avoiding non-responders)
----
+## Known limitations
 
-## Limitations & Future Work
-
-**Current Limitations:**
-- Small sample (n=8 pilot study) - target n=80 for robust validation
-- Single-center retrospective data - multi-center prospective needed
-- Class imbalance (7:1 responder ratio) - larger cohort will balance
-- No external validation cohort - independent test set required
-
-**Planned Enhancements:**
-- Deep learning exploration with larger samples
-- Real-time prediction system for clinical deployment
-- Additional biomarker modalities (genetics, proteomics)
-- Longitudinal outcome tracking (multi-year follow-up)
-
----
-
-## Data Availability:
-The data used in this study was gathered as part of the USC DABI Initiative and accessed through the Informatics and Computing in Neuroscience (ICON) Lab at USC.
-
----
+Summarized in [docs/limitations.md](docs/limitations.md): n = 8 statistics,
+unverified cohort counts, single-center selection effects, unmodeled state
+confounds, band-power-only HFO features, and RNG determinism that is
+version-dependent.
