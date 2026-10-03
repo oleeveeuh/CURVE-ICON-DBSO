@@ -9,7 +9,7 @@ intraoperative ECoG high-frequency oscillations (HFOs) and clinical measures car
 any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 subjects
 (9 recordings)**.
 
-> ### ⚠️ Exploratory research prototype — not for clinical use
+> ### note: exploratory research prototype — not for clinical use
 > Retrospective, single-center, n = 8. No valid study performance estimate exists in
 > this repository: the historical results were invalidated by a prediction-alignment
 > bug plus data leakage, and the only runnable results here are on **synthetic**
@@ -18,7 +18,7 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
 
 ---
 
-## What this repository is (30 seconds)
+## executive summary
 
 - **Question:** can HFO + clinical features relate to motor improvement (% UPDRS
   change) after DBS, measurable at pilot scale? *(Answer at this sample size: not
@@ -213,12 +213,7 @@ participant data out of version control.
 ## Data citation and license
 
 - **Data:** USC DABI via the ICON Lab; exact dataset identifier, contributing
-  investigators, required citation, and DUA reference: **[to be supplied — see
-  docs/data_access.md](docs/data_access.md)**.
-- **Code license:** intentionally unset. The author must confirm institutional
-  (USC) ownership terms before a LICENSE is added; absence of a license means all
-  rights reserved by default. A code license would grant no rights to the
-  underlying clinical data.
+  investigators, required citation, and DUA reference
 
 ## Known limitations
 
