@@ -1,0 +1,19 @@
+# Example configuration for the deterministic synthetic demo.
+# Copy and adjust for your own runs; real-data paths are supplied by
+# authorized users locally and are never committed (see docs/data_access.md).
+
+seed: 42
+n_subjects: 8
+output_dir: outputs/synthetic_demo
+
+hfo:
+  low_hz: 80.0
+  high_hz: 500.0   # must be strictly below Nyquist (fs/2) for your recordings
+
+models:
+  rf_n_estimators: 200
+  rf_max_depth: 3
+  gbr_n_estimators: 50
+  gbr_max_depth: 2
+  gbr_learning_rate: 0.05
+  seed: 42
