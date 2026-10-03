@@ -1,6 +1,6 @@
 # CURVE-ICON-DBSO
 
-**CURVE** — expansion not documented in the repository *[to be supplied by the owner]* ·
+**CURVE** — The Center for Undergraduate Research in Viterbi Engineering ·
 **ICON** — Informatics and Computing in Neuroscience Lab, USC ·
 **DBSO** — Deep Brain Stimulation Outcome (prediction)
 
