@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "curve-icon-dbso"
+version = "0.2.0"
+description = "Exploratory research prototype: DBS outcome analysis using HFO and clinical biomarkers (n=8 pilot; not for clinical use)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }  # TODO(decision): license unset — see docs/data_access.md
+authors = [{ name = "Olivia Liau" }]
+keywords = ["deep-brain-stimulation", "HFO", "ECog", "Parkinson", "exploratory"]
+
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.9",
+    "PyYAML>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+curve-icon-demo = "curve_icon_dbso.demo:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["legacy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# E501 handled by formatter where practical; long docstrings tolerated
+ignore = ["E501"]
