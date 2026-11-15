@@ -158,3 +158,85 @@ def test_unsupported_mat_structure_raises(tmp_path: Path):
     savemat(path, {"unrelated_field": np.zeros((2, 2))})
     with pytest.raises(DataValidationError, match="no supported data structure"):
         load_mat_file(path, fs_override=FS)
+
+
+# --- Real-data layout regression tests (DABI/ICON FieldTrip files) ----------
+
+def _write_fieldtrip_mat(path: Path, trial: np.ndarray, fs: float,
+                         n_channels: int) -> None:
+    """Write a minimal single-trial FieldTrip-style struct like the
+    preprocessed DABI/ICON files: data(1,1) struct with a (1,1) object
+    'trial' cell wrapping (n_channels, n_samples)."""
+    from scipy.io import savemat
+
+    trial_cell = np.empty((1, 1), dtype=object)
+    trial_cell[0, 0] = trial
+    label = np.empty((n_channels, 1), dtype=object)
+    for i in range(n_channels):
+        label[i, 0] = f"ch{i}"
+    struct = np.empty((1, 1), dtype=[("trial", "O"), ("fsample", "O"), ("label", "O")])
+    struct[0, 0]["trial"] = trial_cell
+    struct[0, 0]["fsample"] = fs
+    struct[0, 0]["label"] = label
+    savemat(path, {"data": struct}, do_compression=False)
+
+
+def test_fieldtrip_single_trial_cell_layout_loads(tmp_path: Path):
+    """The real files store 'trial' as a (1,1) object cell wrapping the
+    numeric (channels x samples) array; the loader must unwrap it instead
+    of raising a raw TypeError (regression against first real-data run)."""
+    from curve_icon_dbso.hfo import load_mat_file
+
+    trial = np.vstack([np.sin(np.linspace(0, 100, 500)), np.cos(np.linspace(0, 100, 500))])
+    path = tmp_path / "filtered_downsampled_Data_FT_format.mat"
+    _write_fieldtrip_mat(path, trial, fs=1200.0, n_channels=2)
+
+    loaded_trial, fs = load_mat_file(path)
+    assert loaded_trial.shape == (2, 500)
+    assert fs == 1200.0
+
+
+def test_fieldtrip_multitrial_cell_raises_instead_of_concatenating(tmp_path: Path):
+    """Multi-trial cells must fail loudly: silently concatenating trials
+    would fabricate one continuous recording that never existed."""
+    from scipy.io import savemat
+
+    from curve_icon_dbso.hfo import load_mat_file
+
+    trial_cell = np.empty((3, 1), dtype=object)
+    for i in range(3):
+        trial_cell[i, 0] = np.zeros((2, 100))
+    struct = np.empty((1, 1), dtype=[("trial", "O"), ("fsample", "O")])
+    struct[0, 0]["trial"] = trial_cell
+    struct[0, 0]["fsample"] = 1200.0
+    path = tmp_path / "multi.mat"
+    savemat(path, {"data": struct})
+
+    with pytest.raises(DataValidationError, match="multi-trial cell"):
+        load_mat_file(path)
+
+
+def test_unloadable_file_becomes_file_level_qc_row_not_abort(tmp_path: Path):
+    """One non-ECoG .mat in a subject folder (as in the real dataset) must
+    produce a structured failed-QC row while every other subject still
+    extracts — not crash the whole dataset run."""
+    from scipy.io import savemat
+
+    from curve_icon_dbso.hfo import extract_dataset
+
+    good = tmp_path / "SUBJ_OK_A"  # subject-code-shaped names stay out of the repo (scanner CIC-007)
+    good.mkdir()
+    _write_fieldtrip_mat(
+        good / "filtered_downsampled_Data_FT_format.mat",
+        _signal_with_tone(FS, 2.0, 250.0, 1.0, 0.1)[np.newaxis, :], fs=FS, n_channels=1)
+
+    odd = tmp_path / "SUBJ_ODD_B"
+    odd.mkdir()
+    savemat(odd / "FT_bursts_all_blk_ch_M1_thr_75_FOI_all_timesamples.mat",
+            {"FT_bursts": np.zeros((3, 4), dtype=object)})
+
+    frame = extract_dataset(tmp_path, band=BAND, fs_override=FS)
+    failed = frame[frame["qc_status"] == "failed"]
+    ok = frame[frame["qc_status"] == "ok"]
+    assert len(failed) == 1 and failed.iloc[0]["qc_reason"].startswith("file-level:")
+    assert not ok.empty

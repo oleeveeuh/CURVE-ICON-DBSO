@@ -3,6 +3,137 @@
 Status: **exploratory retrospective feasibility analysis; research
 prototype; not for clinical use.**
 
+> ** November 2026 — status note.** The original DBS-outcome analysis
+> (target: `updrs_improvement`) is **paused**: the clinical table
+> (`UPDRS_data.csv`) was unavailable at analysis time and could not be
+> recovered (not derivable from any distributed script — verified by
+> inspection). A prespecified kinematic analysis below replaces it as
+> the active analysis; the outcome question resumes if the clinical
+> file is recovered. The prespecified target, predictors and estimator
+> below were frozen **before** any model was fit to real data and
+> before any real-data feature/target correlation was computed.
+
+## Kinematic analysis (active; prespecified)
+
+**Research question (pivoted).** Do resting-state intracranial HFO
+features and basic patient covariates relate to concurrent motor
+performance — specifically finger-tapping rate — measured with a
+sensor glove during intraoperative recordings? This is an exploratory
+neural–motor relationship study. It is **not** DBS-outcome prediction:
+glove kinematics measure motor state during the recording session
+(under intraoperative medication/anesthesia conditions), not treatment
+response.
+
+**Primary target (single, prespecified).** `tap_rate_mean` — the
+median dominant tapping frequency (Hz) of the glove signal during
+MOVE blocks:
+
+1. For each MOVE block (`restmove_segs` column 4 = 1; columns 1–2 =
+   start/end samples, treated as 0-based half-open) and each of the 5
+   glove channels: detrend the block, Welch PSD (1 s Hamming windows,
+   50 % overlap), restrict to 0.5–4.0 Hz (physiological tapping range),
+   take the dominant peak frequency and its share of total in-band
+   power.
+2. A channel–block contributes only if that share is ≥ 0.20
+   (prespecified prominence floor — guards against flat/non-oscillating
+   fingers being counted as "taps").
+3. `tap_rate_mean` = median over all contributing channel–blocks.
+4. A recording passes QC only if ≥ 2 channel–blocks contribute;
+   otherwise it is excluded from modeling with an explicit QC record
+   (never imputed silently, never zero-filled).
+
+**Predictors (prespecified, five — fixed before any model fit).**
+
+| Feature | Definition |
+|---|---|
+| `hfo_power_rest_mean` | Mean 80–500 Hz Welch band power over **REST** blocks (column 4 = 0), averaged over blocks and QC-OK ECoG channels |
+| `hfo_peak_freq_rest_mean` | Mean in-band PSD peak frequency over the same REST-block, OK-channel records |
+| `age` | Localization workbook Sheet1, first row per subject |
+| `dbs_volt` | Sheet1 `VOLT STIM`, first row per subject |
+| `dbs_freq` | Sheet1 `FREQ STIM`, first row per subject |
+
+The HFO features deliberately use REST blocks only: the hypothesis is
+that the resting HFO state relates to movement performance measured in
+a different block (cross-state design, less circular than predicting
+movement from features computed during movement). The full-recording
+HFO features remain available but are not part of the prespecified
+set.
+
+**Evaluation.** Unchanged from the corrected design below:
+leave-one-subject-out cross-validation, fold-local median imputation +
+scaling inside an sklearn Pipeline, `DummyRegressor` mean/median
+baselines, fixed hyperparameters, aligned out-of-fold predictions,
+MAE/RMSE/R²/Pearson with subject and recording counts. Each recording
+is one row; subjects contribute at most one recording in this dataset.
+
+**Provenance.** Artifacts are labeled `real — authorized local access;
+exploratory kinematic target; NOT DBS outcome` and are written outside
+the repository by default. No participant-level values are committed.
+
+**Known caveats (stated up front).** n ≈ 31 recordings is still small;
+R² and correlation remain unstable. Glove sensors are uncalibrated
+across subjects, which is why the target is a dimensionless rate
+rather than amplitude. Tapping conditions are intraoperative
+(medication/anesthesia state varies by recording; the `ANAESTHESIA`
+column records it but is not a predictor). At n ≈ 31 with 5
+predictors, any "finding" is hypothesis-generating only.
+
+**Prespecification ambiguity to resolve with the PI before any
+real-data run.** The prominence floor ("dominant peak carries ≥ 0.20 of
+total in-band power") is sensitive to the PSD binning: with the
+prespecified 1 s Welch windows the frequency resolution is 1 Hz, so the
+0.5–4.0 Hz band contains only ~4 bins and a peak-bin share below 0.20
+is essentially unreachable — the floor as worded passes nearly every
+channel and the ≥ 2 channel-block QC rule carries the exclusion. An
+alternative reading (peak share of *total-spectrum* power) would
+discriminate sharply but is not what the frozen text says. The
+implementation follows the frozen wording (`kinematics.py`); this must
+be confirmed with the PI before any real-data QC decision rests on it.
+
+## Uncertainty quantification (implemented 2026-11-13)
+
+Both procedures resample or permute **subjects, never rows**
+(`bootstrap.py`), and both are deterministic given their seed.
+
+**Subject-cluster bootstrap (SCI-008).** MAE and RMSE confidence
+intervals from 2,000 subject-level resamples (seed 42, 95% percentile
+intervals), each resample drawing subjects with replacement and
+carrying all of that subject's recordings. At pilot n the percentile
+method undercovers: the intervals describe this cohort, not the
+population.
+
+**Label-permutation null (SCI-009).** At least 200 permutations of the
+target at the subject level, each rerun through the **complete**
+grouped-CV workflow (same folds, fold-local preprocessing, aligned OOF
+predictions). Subjects are shuffled as blocks, stratified by recording
+count (a 2-recording subject's target block cannot move onto a
+1-recording subject; singleton strata keep their targets, which makes
+the null slightly conservative). The empirical p-value uses the
+conservative convention
+`p = (1 + #{null at least as favorable as observed}) / (1 + n)` —
+never zero, equality counts as favorable. **Permutation results are
+descriptive at n = 8 and remain hypothesis-generating near n ≈ 31**;
+they summarize how unusual the observed metric is against the cohort's
+own label-permutation null.
+
+**Stage labeling (SCI-011).** Every run is labeled `exploratory` or
+`confirmatory` in its outputs and lineage records; this correction
+phase is exploratory by definition. Any change made after viewing real
+results resets the analysis to exploratory unless a new held-out
+evaluation exists.
+
+## Run log (append-only; DOC-002)
+
+| Date | Commit | Stage | Data | Entry |
+|---|---|---|---|---|
+| 2026-10-03 | `382342f`–`eb45b11` | exploratory | synthetic | Corrected pipeline (LOSO, fold-local preprocessing, aligned OOF, baselines) committed and verified on synthetic fixtures; historical results retracted and archived (`bc13544`, `9b63042`). |
+| 2026-11-13 | `eb45b11` + working tree | exploratory | synthetic | Phase 1 hardening: `uv.lock` environment lock; subject-cluster bootstrap CIs (2,000 × seed 42); label-permutation null (≥ 200, conservative p); MLflow lineage (`tracking.py`, local store, synthetic-only); optional fixed-parameter XGBoost parity exercise (DD-003); kinematic extraction implemented and verified on synthetic fixtures (`kinematics.py`). No real-data run has occurred. |
+| 2026-11-14 | `eb45b11` + working tree | exploratory | synthetic | Phase 2 serving path: versioned serving schema v1.0.0 (the prespecified 7-feature outcome contract; `schema.py`); deterministic synthetic artifact build with LOSO metrics, baselines and DD-006 promotion rule (`training.py`, `artifact.py` — selected Linear Regression, `beats_baseline: true`, byte-identical reruns); FastAPI service (`/health`, `/ready`, `/model-info`, `/predict`; no `/explain` per ADR-002); non-root container definition with readiness health check. All verification on synthetic data only; no real-data run has occurred. |
+
+Entries are appended after runs complete; no entry is ever rewritten.
+
+## Original outcome analysis (paused)
+
 ## Research question
 
 Do features derived from intracranial ECoG (high-frequency

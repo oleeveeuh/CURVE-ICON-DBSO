@@ -25,3 +25,19 @@ class MissingDataError(CurveIconError):
     real data. Callers who want a synthetic run must request it explicitly
     via :mod:`curve_icon_dbso.synthetic`.
     """
+
+
+class ArtifactError(CurveIconError):
+    """Raised when a model artifact package is missing, corrupt, or
+    incompatible (hash mismatch, schema drift, library-version drift).
+
+    The API fails readiness loudly on this error instead of serving a
+    model it cannot vouch for (MOD-003). ``error_class`` is a stable,
+    machine-readable category (``artifact_missing``, ``artifact_corrupt``,
+    ``artifact_incompatible``, ``artifact_invalid``) for metadata-only
+    logs and error responses — never the offending values themselves.
+    """
+
+    def __init__(self, message: str, *, error_class: str = "artifact_invalid") -> None:
+        super().__init__(message)
+        self.error_class = error_class

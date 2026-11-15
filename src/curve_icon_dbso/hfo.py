@@ -118,6 +118,27 @@ def _failed(reason: str) -> dict:
             "qc_reason": reason}
 
 
+def _unwrap_trial_field(trial_field: np.ndarray, path: Path) -> np.ndarray:
+    """Unwrap a FieldTrip-style ``trial`` field into a numeric array.
+
+    Handles the layout observed in the DABI/ICON preprocessed files: a
+    ``(1, 1)`` object cell whose single element is the ``(n_channels,
+    n_samples)`` numeric array. Multi-trial cell arrays are rejected
+    explicitly rather than concatenated (concatenating trials would
+    fabricate a single continuous recording).
+    """
+    if getattr(trial_field, "dtype", None) is None or trial_field.dtype.kind != "O":
+        return np.asarray(trial_field, dtype=float)
+    flat = np.asarray(trial_field).ravel()
+    if flat.size != 1:
+        raise DataValidationError(
+            f"{path.name}: multi-trial cell array ({flat.size} trials) is not supported. "
+            "The extractor reads single-continuous-trial FieldTrip structs; split or "
+            "pre-concatenate trials deliberately, with documentation."
+        )
+    return np.asarray(flat[0], dtype=float)
+
+
 def load_mat_file(path: str | Path, fs_override: float | None = None) -> tuple[np.ndarray, float]:
     """Load a MATLAB ``.mat`` file into ``(trial, fs)``.
 
@@ -154,23 +175,31 @@ def load_mat_file(path: str | Path, fs_override: float | None = None) -> tuple[n
     fs: float | None = None
 
     for key in ("data", "trial"):
-        if key in mat and isinstance(mat[key], np.ndarray) and mat[key].dtype == object:
-            struct = mat[key]
-            try:
-                inner = struct[0, 0]
-            except (IndexError, ValueError, TypeError):
-                continue
-            names = inner.dtype.names if hasattr(inner, "dtype") else None
-            if names and "trial" in names:
-                trial = np.asarray(inner["trial"], dtype=float)
-                if "fsample" in names and fs_override is None:
-                    fs = float(np.asarray(inner["fsample"]).ravel()[0])
-                break
+        arr = mat.get(key)
+        if not isinstance(arr, np.ndarray):
+            continue
+        # MATLAB structs load as structured arrays (dtype.names with
+        # object fields); pure cell arrays load as dtype-kind 'O'.
+        is_cell = arr.dtype.kind == "O"
+        is_struct = arr.dtype.names is not None and "trial" in arr.dtype.names
+        if not (is_cell or is_struct):
+            continue
+        try:
+            inner = arr[0, 0]
+        except (IndexError, ValueError, TypeError):
+            continue
+        names = inner.dtype.names if hasattr(inner, "dtype") else None
+        if names and "trial" in names:
+            trial = _unwrap_trial_field(inner["trial"], path)
+            if "fsample" in names and fs_override is None:
+                fs = float(np.asarray(inner["fsample"]).ravel()[0])
+            break
 
     if trial is None:
         for key in ("trial", "data"):
-            if key in mat and isinstance(mat[key], np.ndarray) and mat[key].dtype != object:
-                trial = np.asarray(mat[key], dtype=float)
+            arr = mat.get(key)
+            if isinstance(arr, np.ndarray) and arr.dtype.kind in "fiu":
+                trial = np.asarray(arr, dtype=float)
                 break
 
     if trial is None:
@@ -246,7 +275,9 @@ def extract_dataset(
     every ``*.mat`` file in each, in lexicographic order. There is no
     per-subject subsampling and no preference heuristic: the selection
     rule is "all files, sorted", and each output row records its source
-    file so it can be audited.
+    file so it can be audited. A file that cannot be loaded yields a
+    ``qc_status="failed"`` row (reason prefixed ``"file-level:"``) —
+    the run continues, but the failure is part of the output.
 
     Raises:
         MissingDataError: If ``input_dir`` does not exist or contains no
@@ -275,7 +306,22 @@ def extract_dataset(
 
     frames = []
     for subject, mat_path in mat_files:
-        trial, fs = load_mat_file(mat_path, fs_override=fs_override)
+        try:
+            trial, fs = load_mat_file(mat_path, fs_override=fs_override)
+        except (MissingDataError, DataValidationError, SamplingRateError) as exc:
+            # Structured file-level QC record — the run continues, and the
+            # failure stays visible in the output instead of aborting or
+            # being silently skipped.
+            frames.append(pd.DataFrame([{
+                "subject": subject,
+                "channel": None,
+                "source_file": mat_path.name,
+                "hfo_power": None,
+                "hfo_peak_freq": None,
+                "qc_status": "failed",
+                "qc_reason": f"file-level: {exc}",
+            }]))
+            continue
         frame = extract_recording_features(
             trial, fs, band=band, source_file=mat_path.name
         )

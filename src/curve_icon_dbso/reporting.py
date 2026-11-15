@@ -3,7 +3,11 @@
 Every artifact written by this package carries an explicit
 ``data_provenance`` field (``synthetic`` or a user-supplied descriptor)
 so that pipeline-verification output can never masquerade as study
-results.
+results. Summaries additionally carry the run's provenance fingerprints
+(git SHA, lock hash, feature-schema hash, seed, analysis stage — REP-005)
+and the cohort/protocol context required to interpret the metrics
+(SCI-012). R² is never labeled "accuracy" anywhere in this package, and
+no output revives the retracted historical result.
 """
 
 from __future__ import annotations
@@ -13,9 +17,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from .bootstrap import BootstrapCI
 from .evaluation import CVResult, small_sample_warning
+from .tracking import ANALYSIS_STAGES
 
 PROVENANCE_SYNTHETIC = "synthetic — pipeline verification only, NOT study results"
+
+# Where real per-subject outputs must go: outside the repository
+# (docs/data_access.md). Synthetic demo outputs live in gitignored paths.
+UNIT_OF_OBSERVATION = "subject (all recordings of a subject held out together)"
 
 
 def metrics_table(results: list[CVResult]) -> pd.DataFrame:
@@ -82,9 +92,26 @@ def save_outputs(
     n_subjects: int,
     n_recordings: int,
     provenance: str,
+    target: str | None = None,
+    analysis_stage: str = "exploratory",
+    fold_strategy: str | None = None,
+    missing_data_handling: str | None = None,
+    run_provenance: dict | None = None,
+    bootstrap_summary: dict[str, dict[str, BootstrapCI]] | None = None,
+    permutation_summary: dict | None = None,
 ) -> dict[str, Path]:
     """Write metrics CSV, aligned per-subject OOF predictions CSV, and a
-    JSON summary. Returns the paths written."""
+    machine-readable ``summary.json`` carrying the full run contract
+    (provenance, protocol context, baseline comparison, uncertainty).
+
+    Real-data callers must point ``output_dir`` outside the repository
+    (docs/data_access.md); this function does not enforce it — the
+    guarded entry points do (:func:`curve_icon_dbso.kinematics.resolve_output_dir`).
+    """
+    if analysis_stage not in ANALYSIS_STAGES:
+        raise ValueError(
+            f"analysis_stage must be one of {ANALYSIS_STAGES}, got {analysis_stage!r}"
+        )
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -95,19 +122,43 @@ def save_outputs(
     per_subject_table(results).to_csv(oof_csv, index=False)
 
     beats_baseline = _baseline_comparison(results)
+    strict_beats = _beats_baseline_strict(results)
     summary_json = {
         "data_provenance": provenance,
         "intended_use": "exploratory research prototype; NOT for clinical use",
         "evaluation": "leave-one-subject-out cross-validation",
+        "analysis_stage": analysis_stage,
         "n_subjects": n_subjects,
         "n_recordings": n_recordings,
+        "unit_of_observation": UNIT_OF_OBSERVATION,
+        "target": target,
+        "fold_strategy": fold_strategy,
+        "missing_data_handling": missing_data_handling,
         "small_sample_warning": small_sample_warning(n_subjects),
         "beats_mean_baseline_on_mae": beats_baseline,
         "models": {
-            result.model_name: {k: _jsonable(v) for k, v in result.metrics.items()}
+            result.model_name: {
+                **{k: _jsonable(v) for k, v in result.metrics.items()},
+                "beats_baseline": strict_beats.get(result.model_name),
+            }
             for result in results
         },
+        "run_provenance": run_provenance or {},
     }
+    if bootstrap_summary is not None:
+        summary_json["bootstrap"] = {
+            model: {metric: ci.to_dict() for metric, ci in per_metric.items()}
+            for model, per_metric in bootstrap_summary.items()
+        }
+    if permutation_summary is not None:
+        from .bootstrap import permutation_caveat
+
+        summary_json["permutation_null"] = {
+            model: {metric: result.summary() for metric, result in per_metric.items()}
+            for model, per_metric in permutation_summary.items()
+        }
+        summary_json["permutation_interpretation"] = permutation_caveat(n_subjects)
+
     summary_path = output_dir / "summary.json"
     summary_path.write_text(json.dumps(summary_json, indent=2) + "\n")
 
@@ -132,3 +183,37 @@ def _baseline_comparison(results: list[CVResult]) -> dict[str, bool]:
         for r in results
         if "baseline" not in r.model_name.lower()
     }
+
+
+def _beats_baseline_strict(results: list[CVResult]) -> dict[str, bool]:
+    """Strict usefulness rule (methodology): beat BOTH mean and median
+    baselines on BOTH MAE and RMSE. Baselines themselves are not candidates
+    (absent from the result). Missing baselines -> not claimable -> False.
+
+    SCI-014: a model that does not beat the baseline may still be served as
+    an engineering demonstration, but only with ``beats_baseline: false``
+    visible in its metadata — which is exactly this field."""
+    baselines = {
+        r.model_name: r.metrics for r in results if "baseline" in r.model_name.lower()
+    }
+    required = {"Mean baseline", "Median baseline"}
+    verdicts: dict[str, bool] = {}
+    for result in results:
+        if "baseline" in result.model_name.lower():
+            continue
+        if not required.issubset(baselines):
+            verdicts[result.model_name] = False
+            continue
+        verdicts[result.model_name] = bool(
+            all(
+                result.metrics[metric] < baselines[name][metric]
+                for metric in ("MAE", "RMSE")
+                for name in required
+            )
+        )
+    return verdicts
+
+
+def beats_baseline_strict(results: list[CVResult]) -> dict[str, bool]:
+    """Public alias of :func:`_beats_baseline_strict` for artifact builders."""
+    return _beats_baseline_strict(results)

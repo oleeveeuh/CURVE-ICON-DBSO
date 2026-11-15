@@ -9,9 +9,15 @@ import pytest
 from curve_icon_dbso import demo
 
 
-def _run_into(tmp_path: Path, seed: int = 42) -> Path:
+def _run_into(tmp_path: Path, seed: int = 42, extra: list[str] | None = None) -> Path:
     output_dir = tmp_path / f"out_seed{seed}"
-    exit_code = demo.main(["--output-dir", str(output_dir), "--seed", str(seed)])
+    # Small uncertainty-procedure counts keep the suite fast; production
+    # defaults (2000 resamples / 200 permutations) are the module constants.
+    args = [
+        "--output-dir", str(output_dir), "--seed", str(seed),
+        "--permutations", "5", "--bootstrap-resamples", "200",
+    ]
+    exit_code = demo.main(args + (extra or []))
     assert exit_code == 0
     return output_dir
 

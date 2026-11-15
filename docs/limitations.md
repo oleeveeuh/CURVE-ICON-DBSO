@@ -8,6 +8,15 @@ Read this before drawing any conclusion from this repository.
   LOSO evaluation yields eight held-out predictions; R² and Pearson r
   are close to meaningless at this size (negative expected R² under
   the null; sign flips from one subject to the next).
+- **Bootstrap intervals undercover at this n.** The subject-cluster
+  bootstrap (2,000 resamples) produces *descriptively* wide intervals,
+  but the percentile method is known to be too narrow at pilot sample
+  sizes; the intervals describe this cohort, not a population.
+- **Permutation p-values are descriptive only.** At n = 8 they summarize
+  how unusual the observed metric is against this cohort's own
+  label-permutation null and cannot support a confirmatory claim; near
+  n ≈ 31 (the kinematic cohort) they remain hypothesis-generating.
+  Unequal recording counts stratify the permutation (conservative).
 - **No model comparison is meaningful.** Differences between models
   are within noise; the corrected pipeline reports baselines so this
   is visible rather than hidden.
@@ -25,6 +34,13 @@ Read this before drawing any conclusion from this repository.
   ripple/fast-ripple classification, no artifact rejection).
 - State confounds (REST vs MOVE, anesthesia, medication) are not
   modeled; the repeated-recordings subject shows why this matters.
+- **The kinematic prominence floor is binning-sensitive (prespecification
+  caveat).** With the prespecified 1 s Welch windows the 0.5–4.0 Hz
+  band holds only ~4 PSD bins, so a peak share below the 0.20 floor is
+  nearly unreachable: the floor passes almost every channel and the
+  ≥ 2 channel-block rule does the exclusion work. The alternative
+  "share of total-spectrum power" reading would discriminate sharply.
+  This must be settled with the PI before any real-data QC decision.
 - The historical cortical-thickness "features" included accidental
   pandas merge-suffix columns (`*_x`, `*_y`); any interpretation of
   them as biomarkers is void.

@@ -68,3 +68,19 @@ def test_valid_config_round_trips(tmp_path):
     assert config.n_subjects == 6
     assert config.hfo.high_hz == 250.0
     assert config == DemoConfig(seed=7, n_subjects=6, hfo=HFOConfig(low_hz=80, high_hz=250))
+
+
+def test_model_matrix_contains_exactly_the_prespecified_features():
+    """Regression guard for the prespecified-feature contract: the model
+    matrix must be exactly the 7 prespecified columns — no extra features
+    creeping in, no target or identifier column leaking into X."""
+    from curve_icon_dbso.synthetic import generate_synthetic_cohort
+
+    cohort = generate_synthetic_cohort(n_subjects=4, seed=1)
+    enriched = features_mod.add_clinical_composites(cohort)
+    x, y, groups = features_mod.build_model_matrix(enriched)
+
+    assert list(x.columns) == features_mod.PRESPECIFIED_FEATURES
+    assert len(features_mod.PRESPECIFIED_FEATURES) == 7
+    assert features_mod.TARGET_COLUMN not in x.columns
+    assert features_mod.GROUP_COLUMN not in x.columns

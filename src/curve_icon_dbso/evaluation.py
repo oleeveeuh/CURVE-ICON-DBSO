@@ -125,6 +125,13 @@ def _default_splitter(n_groups: int):
     return GroupKFold(n_splits=5)
 
 
+def describe_fold_strategy(n_groups: int) -> str:
+    """Human-readable name of the splitter :func:`_default_splitter` picks."""
+    if n_groups <= LOSO_MAX_GROUPS:
+        return f"leave-one-subject-out (LOSO, {n_groups} folds)"
+    return "5-fold GroupKFold (subject-grouped)"
+
+
 def _check_group_integrity(groups: np.ndarray, splits) -> None:
     """Defence in depth: assert subject sets never straddle folds."""
     for train_idx, test_idx in splits:
@@ -177,6 +184,42 @@ def default_models(model_cfg=None) -> dict[str, object]:
         ),
         "Linear Regression": LinearRegression(),
     }
+
+
+# Fixed XGBoost configuration (DD-003: optional parity exercise only).
+XGB_FIXED_PARAMS = {
+    "n_estimators": 100,
+    "max_depth": 2,
+    "learning_rate": 0.05,
+    "n_jobs": 1,  # determinism over speed, same rule as the RF above
+    "random_state": 42,
+}
+
+
+def xgboost_model(model_cfg=None) -> object:
+    """Fixed-parameter XGBoost regressor for the optional parity exercise.
+
+    Runs through the identical folds, preprocessing and baselines as every
+    other model. NOT part of ``default_models`` (SCI-006/DD-003): the core
+    corrected analysis must not require or silently include XGBoost.
+
+    Raises:
+        ImportError: With install instructions when the optional
+            ``analysis`` dependency group is not installed.
+    """
+    try:
+        from xgboost import XGBRegressor
+    except ImportError as exc:
+        raise ImportError(
+            "The optional XGBoost comparison requires the 'analysis' dependency "
+            "group: pip install -e \".[analysis]\" (or uv sync --extra analysis). "
+            "It is deliberately optional (DD-003) and must not be added to the "
+            "default analysis."
+        ) from exc
+    params = dict(XGB_FIXED_PARAMS)
+    if model_cfg is not None:
+        params["random_state"] = model_cfg.seed
+    return XGBRegressor(**params)
 
 
 def run_group_cv(
