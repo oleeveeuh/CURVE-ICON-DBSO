@@ -1,0 +1,207 @@
+name: Deploy
+
+# CIC-003..CIC-006: OIDC-only delivery for the public synthetic track.
+#
+# Trust chain (ADR-005): the three IAM roles are trusted for the exact
+# repository slug, restricted to ref:refs/heads/main (build/plan) or the
+# protected GitHub environment aws-synthetic (apply/deploy - GitHub enforces
+# required-reviewer approval and the main-only deployment branch policy in
+# the environment settings, documented in infra/README.md). No long-lived
+# AWS keys exist anywhere; GitHub repository VARIABLES carry the role ARNs,
+# region, and state-backend names (infra/README.md).
+#
+# Build once, deploy the immutable digest: the image is built once, tagged
+# sha-<12> (CON-006), the digest is resolved from ECR, and ONLY that digest
+# reference is passed to Terraform (CIC-005). "aws ecs wait services-stable"
+# confirms the deployment; the prior task revision stays registered and the
+# deployment circuit breaker auto-rolls-back a failing deployment (CIC-006).
+#
+# ACCOUNT CONSTRAINT (2026-11-14): the owner's new-AWS-experience project
+# account denies OIDC providers via managed SCP, so enable_github_oidc=false
+# there and THIS WORKFLOW CANNOT RUN against it (no roles to assume). It is
+# correct for standard accounts; current deploys run locally (docs/runbook.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Dockerfile"
+      - .dockerignore
+      - pyproject.toml
+      - uv.lock
+      - infra/**
+      - scripts/train_synthetic_model.py
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-aws-synthetic
+  cancel-in-progress: false
+
+env:
+  ECR_REPO: curve-icon-dbso-dev-api # deterministic from locals.tf (ADR-005); rename = update here + runbook
+  CLUSTER: curve-icon-dbso-dev-cluster
+  SERVICE: api
+
+jobs:
+  build:
+    name: Build and push image (sha-tagged)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.digest.outputs.image }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Configure AWS credentials (OIDC, ECR-push role)
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_PUSH_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Log in to ECR
+        run: |
+          REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com"
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "$REGISTRY"
+          echo "REGISTRY=${REGISTRY}" >> "$GITHUB_ENV"
+      - name: Build image (tagged by source SHA, CON-006)
+        run: |
+          SHA12="${GITHUB_SHA::12}"
+          IMAGE="${REGISTRY}/${ECR_REPO}:sha-${SHA12}"
+          docker build \
+            --build-arg "SOURCE_SHA=${GITHUB_SHA}" \
+            -t "${IMAGE}" .
+          echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
+      - name: Push image
+        run: docker push "${IMAGE}"
+      - name: Resolve immutable digest (CIC-005)
+        id: digest
+        run: |
+          SHA12="${GITHUB_SHA::12}"
+          DIGEST=$(aws ecr describe-images \
+            --repository-name "${ECR_REPO}" \
+            --image-ids imageTag="sha-${SHA12}" \
+            --query 'imageDetails[0].imageDigest' --output text)
+          echo "image=${REGISTRY}/${ECR_REPO}@${DIGEST}" >> "$GITHUB_OUTPUT"
+      - name: Summarize
+        run: echo "Built and pushed \`${{ steps.digest.outputs.image }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  plan:
+    name: Terraform plan on main (read-only)
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Configure AWS credentials (OIDC, plan role)
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_wrapper: false
+      - name: Terraform init (remote backend)
+        run: >-
+          terraform init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+          -backend-config="key=${{ vars.TF_STATE_KEY }}"
+          -backend-config="region=${{ vars.AWS_REGION }}"
+      - name: Terraform plan (read-only)
+        run: >-
+          terraform plan -input=false -no-color
+          -var-file=environments/dev.tfvars
+          -var="container_image=${{ needs.build.outputs.image }}"
+          -var="desired_count=1"
+          -var="state_bucket_name=${{ vars.TF_STATE_BUCKET }}"
+          -var="state_lock_table=${{ vars.TF_LOCK_TABLE }}"
+      - name: Summarize
+        run: echo "Plan completed on main; the deploy job (protected environment aws-synthetic) applies it." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Apply + deploy (protected environment, human approval)
+    runs-on: ubuntu-latest
+    needs: [build, plan]
+    environment: aws-synthetic
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Configure AWS credentials (OIDC, apply role)
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
+        with:
+          role-to-assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Capture prior task definition (rollback target, CIC-006)
+        id: prior
+        continue-on-error: true
+        run: |
+          prior="$(aws ecs describe-services \
+            --cluster "${CLUSTER}" --services "${SERVICE}" \
+            --query 'services[0].taskDefinition' --output text)"
+          if [ "$prior" = "None" ] || [ -z "$prior" ]; then
+            echo "No prior revision (first deployment)." >> "$GITHUB_STEP_SUMMARY"
+            prior=""
+          fi
+          echo "prior=${prior}" >> "$GITHUB_OUTPUT"
+      - name: Preflight - placeholder budget email must be replaced before any apply (INF-008)
+        run: |
+          if grep -Eq '^budget_alert_email[[:space:]]*=[[:space:]]*"REPLACE' environments/dev.tfvars; then
+            echo "::error::infra/environments/dev.tfvars still has the placeholder budget_alert_email. Set the real notification address before any apply."
+            exit 1
+          fi
+      - name: Terraform init
+        run: >-
+          terraform init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+          -backend-config="key=${{ vars.TF_STATE_KEY }}"
+          -backend-config="region=${{ vars.AWS_REGION }}"
+      - name: Terraform apply (digest + desired_count=1; approval already granted by the environment gate)
+        run: >-
+          terraform apply -auto-approve -input=false -no-color
+          -var-file=environments/dev.tfvars
+          -var="container_image=${{ needs.build.outputs.image }}"
+          -var="desired_count=1"
+          -var="state_bucket_name=${{ vars.TF_STATE_BUCKET }}"
+          -var="state_lock_table=${{ vars.TF_LOCK_TABLE }}"
+      - name: Wait for ECS stability (CIC-005)
+        run: |
+          CLUSTER_OUT="$(terraform output -raw ecs_cluster_name)"
+          SERVICE_OUT="$(terraform output -raw ecs_service_name)"
+          timeout 900 aws ecs wait services-stable --cluster "${CLUSTER_OUT}" --services "${SERVICE_OUT}"
+      - name: Smoke test through the approved ingress (ADR-004)
+        run: |
+          DOMAIN="$(terraform output -raw cloudfront_domain)"
+          curl -fsS "https://${DOMAIN}/ready"
+          curl -fsS "https://${DOMAIN}/health"
+          curl -fsS -X POST \
+            -H 'content-type: application/json' \
+            --data @../tests/fixtures/synthetic_predict_request.json \
+            "https://${DOMAIN}/predict"
+          echo "model-info via ${DOMAIN}:" >> "$GITHUB_STEP_SUMMARY"
+          curl -fsS "https://${DOMAIN}/model-info" | python3 -m json.tool >> "$GITHUB_STEP_SUMMARY"
+      - name: Deploy summary (rollback target preserved, CIC-006)
+        run: |
+          {
+            echo "### Deploy summary"
+            echo "- Image (immutable digest): \`${{ needs.build.outputs.image }}\`"
+            echo "- Prior task definition (rollback target): \`${{ steps.prior.outputs.prior }}\`"
+            echo "- Rollback: docs/runbook.md - update-service to the prior revision; circuit breaker auto-rollback armed."
+          } >> "$GITHUB_STEP_SUMMARY"

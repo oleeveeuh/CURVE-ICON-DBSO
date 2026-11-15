@@ -23,6 +23,37 @@ venv/
 .mypy_cache/
 .ipynb_checkpoints/
 
+# --- Experiment lineage (MOD-004: local stores are disposable, synthetic-only) -
+# Real-data experiment stores are restricted derived data and must never be
+# created here at all — see docs/data_access.md and docs/approvals.md.
+mlruns/
+mlartifacts/
+
+# --- Model artifacts (Phase 2: synthetic-only, reproducible from source) -------
+# Generated serving artifacts are disposable: retrain deterministically with
+# scripts/train_synthetic_model.py. Real-data artifacts are restricted derived
+# data and must never be created here — see docs/data_access.md.
+artifacts/
+
+# --- Terraform (INF-006: state and plans must never be committed) -------------
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+*.hcl.bak
+
+# NOTE: infra/.terraform.lock.hcl IS committed on purpose (provider
+# checksum pinning, REP-003 spirit) — do not add it to this ignore list.
+
+# --- CI-generated scan/coverage artifacts (uploaded as workflow artifacts,
+# not committed) ---------------------------------------------------------------
+coverage.xml
+sbom.cdx.json
+trivy-*-report.json
+
 # --- OS / IDE -----------------------------------------------------------------
 .DS_Store
 Thumbs.db
