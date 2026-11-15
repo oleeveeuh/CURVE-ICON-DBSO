@@ -1,0 +1,93 @@
+# Build-context exclusions (CON-002). The image build needs exactly four
+# things: pyproject.toml, uv.lock, README.md (needed by the project build)
+# and src/. Everything else listed here is either private, derived, or not
+# needed at runtime — it must never enter the build context.
+#
+# The patterns follow .dockerignore semantics: a pattern without a slash
+# matches by name at any depth; a trailing slash matches directories;
+# `*` globs within a path segment.
+
+# --- Private / restricted data (never in an image) ---------------------------
+data/
+outputs/
+**/*.csv
+**/*.mat
+**/*.edf
+**/*.nii
+**/*.nii.gz
+**/*.xlsx
+**/*.parquet
+
+# --- Model artifacts: the image trains its own synthetic model ---------------
+# (a trained artifact in the context could be real-data-derived; blocking
+# the whole class also keeps *.pkl blobs of any origin out of the build)
+artifacts/
+**/*.pkl
+**/*.joblib
+
+# --- Experiment stores and databases -----------------------------------------
+mlruns/
+mlartifacts/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+
+# --- Infrastructure state -----------------------------------------------------
+.git/
+.gitlab/
+.github/
+.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+
+# --- Credentials and secrets --------------------------------------------------
+.env
+.env.*
+**/*.pem
+**/*.key
+**/*.crt
+**/*.p12
+**/*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+**/*secret*
+**/*token*
+
+# --- Caches and tooling state -------------------------------------------------
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+
+# --- Local environments -------------------------------------------------------
+.venv/
+venv/
+env/
+.python-version
+
+# --- Runtime-irrelevant repository content (CON-002: tests not needed) --------
+tests/
+docs/
+scripts/
+legacy/
+figures/
+configs/
+plans/
+.claude/
+.vscode/
+.idea/
+Dockerfile
+.dockerignore
+README.md.bak
