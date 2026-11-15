@@ -69,6 +69,12 @@ SUBJECT_IDENTIFIER_PATTERN = re.compile(r"DBS_bG\d")
 # Secrets are still scanned there; only IDENTIFIERS are exempt.
 IDENTIFIER_EXEMPT_PREFIXES = ("legacy/",)
 
+# The scanner's own negative-test file plants fake secrets, identifiers and
+# credentials to prove the patterns fire (tests/test_security_scan.py).
+# Scanning it would flag its fixtures forever; its file TYPE is still
+# checked, and the planted strings are test data, never real credentials.
+CONTENT_EXEMPT_FILES = ("tests/test_security_scan.py",)
+
 # File types that must never be committed (CON-002, REP-006, INF-006).
 PROHIBITED_SUFFIXES = (
     ".csv",
@@ -160,7 +166,10 @@ def scan_files(files: list[Path]) -> list[str]:
             continue
 
         exempt_ids = is_identifier_exempt(path)
+        content_exempt = rel.replace("\\", "/") in CONTENT_EXEMPT_FILES
         for lineno, line in enumerate(text.splitlines(), start=1):
+            if content_exempt:
+                continue  # the negative-test fixture file: patterns are its content
             for name, pattern in SECRET_PATTERNS:
                 if pattern.search(line):
                     findings.append(f"{rel}:{lineno}: secret-pattern ({name})")

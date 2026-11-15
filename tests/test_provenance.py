@@ -94,12 +94,13 @@ def test_mlflow_store_is_gitignored():
         cwd=REPO_ROOT, capture_output=True,
     )
     assert check_outputs.returncode == 0, "git does not ignore outputs/"
-    # ...and uv.lock is the opposite: it MUST be tracked.
+    # ...and uv.lock is the opposite: it MUST be tracked (REP-003: the
+    # committed deterministic lock feeds local setup, CI, and Docker).
     tracked = subprocess.run(
         ["git", "ls-files", "--error-unmatch", "uv.lock"],
         cwd=REPO_ROOT, capture_output=True,
     )
-    assert tracked.returncode != 0  # not yet committed (user commits on approval)
+    assert tracked.returncode == 0, "uv.lock must be committed (REP-003)"
 
 
 # --- approval-gated script: rehearsal on synthetic fixtures only --------------
