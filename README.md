@@ -75,10 +75,9 @@ Per subject ([`src/curve_icon_dbso/features.py`](src/curve_icon_dbso/features.py
 - a **prespecified set of 7 features** — fixed a priori, no data-driven selection.
 
 **Not implemented, therefore not claimed:** phase-amplitude coupling, artifact
-rejection, SNR, stability metrics, spatial-distribution summaries, bootstrap
-confidence intervals, per-patient uncertainty. (The historical README's "18 neural
-biomarkers" and "108 features" were unsupported — artifacts show 32 engineered
-columns, 2 of them HFO-derived.)
+rejection, SNR, stability metrics, spatial-distribution summaries. (The historical
+README's "18 neural biomarkers" and "108 features" were unsupported — artifacts show
+32 engineered columns, 2 of them HFO-derived.)
 
 ## Validation design (corrected)
 
@@ -93,7 +92,11 @@ columns, 2 of them HFO-derived.)
    `oof[test_idx] = pipe.predict(X_test)` — regression-tested with nonsequential
    fold indices (`tests/test_alignment.py`).
 5. **Metrics**: MAE, RMSE, R², Pearson r + per-subject OOF predictions and errors.
-6. **No tuning**: hyperparameters are fixed and documented; nothing is optimized
+6. **Uncertainty**: subject-cluster bootstrap confidence intervals for MAE/RMSE
+   (2,000 resamples, fixed seed) and a subject-level label-permutation null
+   (≥ 200 permutations through the complete CV workflow, conservative p-values) —
+   descriptive at pilot n, never confirmatory.
+7. **No tuning**: hyperparameters are fixed and documented; nothing is optimized
    against held-out subjects.
 
 **Small-sample caveat (applies to everything below):** LOSO on 8 subjects yields
@@ -142,10 +145,15 @@ that rather than hide it.
 ```bash
 git clone https://github.com/oleeveeuh/CURVE-ICON-DBSO.git
 cd CURVE-ICON-DBSO
-python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
 
-# deterministic synthetic end-to-end run (~seconds)
+# locked environment (uv; reproducible per uv.lock)
+uv sync --extra dev && source .venv/bin/activate
+# ...or plain pip, which still works:
+# python3.11 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev]"
+
+# deterministic synthetic end-to-end run (~seconds; adds bootstrap CIs and a
+# label-permutation null — raise --permutations to the protocol default of 200
+# for evaluation-grade runs)
 curve-icon-demo --output-dir outputs/synthetic_demo
 
 # regenerate README figures
@@ -168,27 +176,93 @@ python scripts/run_hfo_extraction.py \
 Details, required citations, and DUA placeholders:
 [docs/data_access.md](docs/data_access.md).
 
+## Phase 2: synthetic inference service (research demonstration)
+
+A strictly validated FastAPI service serves a **synthetic-trained**
+demonstration model — an engineering artifact, not a clinical or
+scientific result. Setup, training, endpoint contract, manifest
+explanation, Docker instructions, and troubleshooting live in
+[docs/api.md](docs/api.md).
+
+```bash
+uv sync --extra dev --extra api                       # locked environment
+python scripts/train_synthetic_model.py               # deterministic synthetic artifact
+uvicorn curve_icon_dbso.api.main:app --workers 1 --no-access-log
+docker build --build-arg SOURCE_SHA=$(git rev-parse HEAD) \
+    -t curve-icon-dbso-api:$(git rev-parse --short=12 HEAD) .
+```
+
+Design points: one versioned 7-feature schema shared by training, the
+API, and the manifest (`src/curve_icon_dbso/schema.py`); hash-verified
+artifact loading that fails readiness loudly on any mismatch; batches of
+1–256 rows with order-preserving predictions; payloads, predictions, and
+feature values never logged; non-root single-worker container with a
+readiness-gated health check; **no `/explain` endpoint** by approved
+decision ([docs/decisions/ADR-002-explanation-endpoint.md](docs/decisions/ADR-002-explanation-endpoint.md)).
+Measured cold start on the development machine: median 1.15 s
+(image size/cold start in a container are measured by the Docker-gated
+tests wherever a Docker daemon exists).
+
+## Phase 3–4: CI/CD gates and the public synthetic AWS track (not yet deployed)
+
+Every pull request runs: locked install, Ruff, the offline suite with
+coverage, secret + subject-identifier scanning, a real container build with
+SBOM generation and an exceptions-aware HIGH/CRITICAL vulnerability gate
+([docs/vulnerability-exceptions.yml](docs/vulnerability-exceptions.yml)),
+the image-content privacy check, and Terraform format/validate/lint/security
+scans — plus a read-only Terraform plan on same-repository PRs
+([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+The deployment path ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
+authenticates to AWS exclusively through GitHub OIDC (no long-lived keys):
+it builds the image once by git SHA, pushes it to ECR, resolves the
+immutable digest, and — only after approval in the protected GitHub
+environment `aws-synthetic` — applies Terraform, waits for ECS stability,
+and smoke-tests through the approved ingress. The environment itself is
+Terraform-managed ([infra/](infra/)): CloudFront (default
+`*.cloudfront.net` TLS) → ALB (locked to CloudFront) → ECS Fargate,
+versioned private artifact bucket, budgets at $5/$20, scale-to-zero by
+default. Decisions: [ADR-004](docs/decisions/ADR-004-public-ingress-and-tls.md),
+[ADR-005](docs/decisions/ADR-005-terraform-organization.md).
+
+**No AWS resource exists yet.** Bootstrap, first apply, verification,
+rollback, scale-to-zero, destroy, and the orphan-resource check are
+documented step by step in [docs/runbook.md](docs/runbook.md), with
+safe/mutating/destructive commands clearly separated and estimated costs
+flagged for re-checking before any apply.
+
 ## Tests
 
 ```bash
-pytest -q          # 39 offline tests; no private data needed
+pytest -q          # offline suite; no private data needed (count printed by pytest)
 ruff check src tests scripts
 ```
 
 Coverage includes: OOF alignment under nonsequential folds, subject-group
 integrity, fold-local fitting, hand-calculated metrics, HFO detection on synthetic
-signals, Nyquist violations, failure-vs-zero QC, malformed-input errors, and an
-end-to-end determinism check. CI runs the suite on Python 3.11/3.12
-([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+signals, Nyquist violations, failure-vs-zero QC, malformed-input errors,
+subject-cluster bootstrap (cluster integrity, determinism, hand-checked draws),
+the label-permutation null (block permutation, p-value convention), experiment
+lineage and provenance fingerprints, the optional XGBoost exercise, kinematic
+extraction on synthetic fixtures, governance-documentation checks, and an
+end-to-end determinism check. CI runs the suite on Python 3.11/3.12 from the
+committed lock file ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## Repository structure
 
 ```
-src/curve_icon_dbso/   package: config, synthetic cohort, features, HFO, evaluation, reporting
-scripts/               CLI entry points (demo, HFO extraction, figure generation)
-tests/                 offline test suite (39 tests)
+src/curve_icon_dbso/   package: config, synthetic cohort, features, HFO, kinematics,
+                       evaluation, bootstrap, tracking, reporting, schema,
+                       artifact, training, api/ (Phase 2 inference service)
+scripts/               CLI entry points (demo, synthetic model training, HFO
+                       extraction, kinematic evaluation, figure generation,
+                       security scan, vulnerability gate)
+tests/                 offline test suite (count printed by pytest)
+infra/                 Terraform for the public synthetic AWS track (single root
+                       module + one-time remote-state bootstrap; ADR-005)
 configs/               example YAML configuration
-docs/                  data access, methodology, limitations
+docs/                  data access, methodology, limitations, approvals, API guide,
+                       runbook (deploy/rollback/destroy), decisions/
 figures/               verified figures (+ archive/ of invalid historical figures)
 legacy/                archived original scripts, known-buggy, superseded — do not run
 ```
