@@ -15,7 +15,7 @@
 > as build history.
 
 **Purpose:** Sequenced prompts for implementing the modernization defined in `docs/mlops_extension_plan.md`.  
-**Repository:** `/Users/olivialiau/CURVE-ICON-DBSO`  
+**Repository:** `~/CURVE-ICON-DBSO`  
 **Use:** Run one prompt at a time, in order. Review its handoff before starting the next prompt.  
 **Important:** The approval/authorization preconditions written inside these historical prompts are no longer operative (see the status note above). Repository work — writing, implementation, experimentation, testing, analysis, and documentation changes — is never blocked pending any approval.
 
@@ -46,7 +46,7 @@ Every implementation prompt requires the agent to:
 ## Prompt 0 — Baseline, worktree protection, and execution map
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`.
+Work in `~/CURVE-ICON-DBSO`.
 
 This is a planning and repository-baseline task. Do not implement features yet, do not commit, do not push, do not run real-data analysis, and do not touch AWS.
 
@@ -94,7 +94,7 @@ Return:
 > `docs/data_access.md`.)*
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO` and implement only the governance/documentation work allowed by Phase 0 of `docs/mlops_extension_plan.md`.
+Work in `~/CURVE-ICON-DBSO` and implement only the governance/documentation work allowed by Phase 0 of `docs/mlops_extension_plan.md`.
 
 Read the extension plan completely and inspect the current working tree before editing. Preserve all existing changes. Do not commit or push. Do not run real-data analysis. Do not create AWS resources. Never claim that an approval exists unless I provide the actual decision.
 
@@ -134,7 +134,7 @@ End with:
 ## Prompt 2 — Scientific hardening, reproducibility, and experiment lineage
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement Phase 1 of `docs/mlops_extension_plan.md` for the synthetic/public path. Do not run any real-data evaluation. Do not commit or push. Preserve all pre-existing user changes.
+Work in `~/CURVE-ICON-DBSO`. Implement Phase 1 of `docs/mlops_extension_plan.md` for the synthetic/public path. Do not run any real-data evaluation. Do not commit or push. Preserve all pre-existing user changes.
 
 Before editing:
 - Read the extension plan, methodology, limitations, evaluation code, reporting code, synthetic pipeline, tests, and current diff.
@@ -207,7 +207,7 @@ End with changed files, exact commands/results, requirement IDs satisfied, unres
 ## Prompt 3 — Synthetic model artifact, FastAPI service, and Docker image
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement Phase 2 of `docs/mlops_extension_plan.md` using synthetic data only. Do not commit, push, run real-data analysis, or access AWS. Preserve the existing working tree.
+Work in `~/CURVE-ICON-DBSO`. Implement Phase 2 of `docs/mlops_extension_plan.md` using synthetic data only. Do not commit, push, run real-data analysis, or access AWS. Preserve the existing working tree.
 
 Read the plan and all Phase 1 implementation before editing. Verify the locked environment and tests first.
 
@@ -271,7 +271,7 @@ End with changed files, API contract, exact verification results, measured image
 ## Prompt 4 — Owner design checkpoint for ingress, Terraform, and promotion
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This is a design consultation only. Do not modify code or infrastructure, commit, push, contact external services, or create AWS resources.
+Work in `~/CURVE-ICON-DBSO`. This is a design consultation only. Do not modify code or infrastructure, commit, push, contact external services, or create AWS resources.
 
 Read `docs/mlops_extension_plan.md`, especially DD-004 through DD-006, plus the implemented API/container and current repository diff.
 
@@ -313,7 +313,7 @@ Do not infer missing account IDs, domains, region, or approvals. End with a comp
 > *(Historical; prerequisites below were satisfied on 2026-11-14. Note: "do not run Terraform apply or create AWS resources without a separate explicit instruction" is a spend-control instruction for the agent, not a compliance gate — repository work itself is never gated.)*
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement Phases 3 and 4 of `docs/mlops_extension_plan.md` for the public synthetic track only.
+Work in `~/CURVE-ICON-DBSO`. Implement Phases 3 and 4 of `docs/mlops_extension_plan.md` for the public synthetic track only.
 
 Prerequisites:
 - DD-004 through DD-006 have been explicitly answered by me.
@@ -375,7 +375,7 @@ At the end, show the exact Terraform plan/apply command that would be used, but 
 > *(Historical; the deployment it describes was executed, verified, and destroyed on 2026-11-14/15 — see `docs/deployment_report.md`. The "approval" framing was the owner's spend-confirmation flow; the environment deployment already happened.)*
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO` and deploy the public synthetic track defined in Phase 4 only after confirming that I explicitly approved the Terraform plan/apply and expected cost in this conversation.
+Work in `~/CURVE-ICON-DBSO` and deploy the public synthetic track defined in Phase 4 only after confirming that I explicitly approved the Terraform plan/apply and expected cost in this conversation.
 
 If that approval is not present, do not deploy; produce or refresh the read-only plan instead.
 
@@ -411,7 +411,7 @@ End with deployed resource summary, endpoint exposure (redact sensitive identifi
 > *(Historical; the observability/load/drift/rollback work it describes was completed and measured on 2026-11-15 — see `docs/deployment_report.md`. The failure-exercise "explicit approval" line was the owner's spend-confirmation flow — the exercise is complete.)*
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement and verify Phase 5 of `docs/mlops_extension_plan.md` against the public synthetic environment. Preserve the working tree and do not commit/push unless separately requested.
+Work in `~/CURVE-ICON-DBSO`. Implement and verify Phase 5 of `docs/mlops_extension_plan.md` against the public synthetic environment. Preserve the working tree and do not commit/push unless separately requested.
 
 Confirm the deployed environment is synthetic-only before sending traffic. If it is absent, implement all repository-side work and provide a local verification path without creating infrastructure.
 
@@ -455,7 +455,7 @@ End with measured results, whether each target passed, alarm/failure evidence, p
 ## Prompt 8 — Documentation, publication readiness, and one-repository reviewer flow
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement Phase 6 of `docs/mlops_extension_plan.md` using the approved one-repository decision. Do not publish, commit, push, make the repository public, or disclose real-data metrics unless I separately approve those actions.
+Work in `~/CURVE-ICON-DBSO`. Implement Phase 6 of `docs/mlops_extension_plan.md` using the approved one-repository decision. Do not publish, commit, push, make the repository public, or disclose real-data metrics unless I separately approve those actions.
 
 Read the entire repository, current diff, runbook, decision records, manifests, workflow files, and measured Phase 5 results.
 
@@ -507,7 +507,7 @@ End with reviewer-test timing, publication-scan findings, documentation changed,
 > *(Historical; the optional Kubernetes exercise it describes was completed on 2026-11-15 — see `docs/kubernetes.md`. Its "explicit confirmation" precondition is satisfied; no approval precondition is operative.)*
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This prompt is optional and requires my explicit confirmation that I still want Phase 7 after reviewing the ECS load-test evidence. If that confirmation is absent, stop with an ECS-versus-Kubernetes recommendation and make no changes.
+Work in `~/CURVE-ICON-DBSO`. This prompt is optional and requires my explicit confirmation that I still want Phase 7 after reviewing the ECS load-test evidence. If that confirmation is absent, stop with an ECS-versus-Kubernetes recommendation and make no changes.
 
 This work is local only. Do not create EKS or any cloud Kubernetes resources.
 
@@ -535,7 +535,7 @@ End with local resource usage, test results, comparison conclusion, changed file
 ## Prompt 10 — Institutional real-data track, approval-gated (RETIRED 2026-11-15 — the institutional framework it assumed is retired; the follow-on compliance gate was removed 2026-11-16; NOT_APPLICABLE — independent personal project, see docs/approvals.md)
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This prompt must not proceed unless I provide evidence that every required Phase 0 approval is complete: PI scope, IRB determination, DUA permissions, institutional security approval, institutional AWS/account decision, publication rules, and artifact-retention rules.
+Work in `~/CURVE-ICON-DBSO`. This prompt must not proceed unless I provide evidence that every required Phase 0 approval is complete: PI scope, IRB determination, DUA permissions, institutional security approval, institutional AWS/account decision, publication rules, and artifact-retention rules.
 
 First inspect the redacted approval checklist. If any required item is pending, expired, ambiguous, or inconsistent, stop. List the missing decision and do not access real data, run real analysis, create institutional resources, or modify the public-track boundary.
 
@@ -561,7 +561,7 @@ End with a redacted summary suitable for the repository and a separate private h
 ## Prompt 11 — Final requirements and release audit
 
 ```text
-Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Perform a final read-only audit against every numbered requirement and definition-of-done item in `docs/mlops_extension_plan.md`. Do not fix issues until after presenting the audit unless I explicitly ask you to implement the fixes.
+Work in `~/CURVE-ICON-DBSO`. Perform a final read-only audit against every numbered requirement and definition-of-done item in `docs/mlops_extension_plan.md`. Do not fix issues until after presenting the audit unless I explicitly ask you to implement the fixes.
 
 Inspect source, tests, workflows, dependency lock, model/artifact manifests, Docker configuration, Terraform, runbooks, decision records, the data & compliance notices, monitoring/load evidence, current cloud state if read-only access is approved, and the entire git diff/history relevant to release.
 

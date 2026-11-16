@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "owner" {
-  description = "Owner tag value (INF-009)."
+  description = "Owner tag value (INF-009). Set to the repository owner's handle."
   type        = string
-  default     = "olivialiau"
+  default     = "oleeveeuh"
 }

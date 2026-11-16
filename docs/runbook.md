@@ -49,13 +49,14 @@ possible; the apply role's wildcards (documented in
 [infra/README.md](../infra/README.md)) are safest in an account with
 nothing else in it.
 
-**Credentials on this machine (2026-11-14):** the AWS CLI `aws login`
-browser session under profile **`main`** (region us-east-2; 12-hour
+**Credentials on this machine (2026-11-14):** an AWS CLI `aws login`
+browser session under a local profile (region us-east-2; 12-hour
 sessions, 90-day renewal). The login cache is NOT readable by Terraform's
-SDK directly — bridge it for every mutating command:
+SDK directly — bridge it for every mutating command, substituting your
+profile name:
 
 ```bash
-eval "$(aws configure export-credentials --profile main --format env)"
+eval "$(aws configure export-credentials --profile <profile> --format env)"
 ```
 
 **Account constraint (observed 2026-11-14):** this account is a
@@ -76,8 +77,8 @@ See [infra/bootstrap/README.md](../infra/bootstrap/README.md). Summary:
 ```bash
 cd infra/bootstrap
 terraform init                                                # ✅ SAFE
-terraform plan -var owner=olivialiau                          # ✅ SAFE (preview)
-terraform apply -var owner=olivialiau                         # ⚠️ MUTATING (~$0.5/mo total)
+terraform plan -var owner=oleeveeuh                           # ✅ SAFE (preview)
+terraform apply -var owner=oleeveeuh                          # ⚠️ MUTATING (~$0.5/mo total)
 terraform output state_bucket_name                            # ✅ SAFE — record it
 terraform output lock_table_name                              # ✅ SAFE — record it
 ```

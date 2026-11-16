@@ -28,10 +28,10 @@ cd infra/bootstrap
 # ✅ SAFE: format and preview
 terraform fmt -check -recursive
 terraform init                      # local state (no backend needed here)
-terraform plan -var owner=olivialiau
+terraform plan -var owner=oleeveeuh
 
 # ⚠️ MUTATING: create the state bucket + lock table (one-time)
-terraform apply -var owner=olivialiau
+terraform apply -var owner=oleeveeuh
 
 # Record the outputs — they feed the main module and CI:
 terraform output state_bucket_name   # -> -backend-config bucket=... AND -var state_bucket_name=...
@@ -56,7 +56,7 @@ have exported/kept the main state file somewhere private:
 # DynamoDB deletion protection must be disabled first (guardrail):
 aws dynamodb update-table --table-name $(terraform output -raw lock_table_name) \
   --no-deletion-protection-enabled
-terraform destroy -var owner=olivialiau
+terraform destroy -var owner=oleeveeuh
 # The state bucket is not force-destroyed: empty it manually first, then
 # delete it by hand if you truly intend to lose all state history.
 ```
