@@ -10,14 +10,16 @@
 > **Governance amendment (2026-11-15, extended 2026-11-16):** the
 > institutional approval framework in this plan (§5.2, §6, Phase 0) is
 > retired. This is an independent personal project with no
-> institutional affiliation: it uses only legitimately public data and
-> personal resources, and restricted or former-lab data is out of scope
-> outright. Institutional items are recorded `NOT_APPLICABLE` (never
-> `APPROVED`). **On 2026-11-16 the follow-on "personal public-data
-> compliance gate" (checklist statuses plus script enforcement) was
-> removed: repository work is never blocked by an approval workflow.**
-> Data, licensing, privacy, and attribution considerations are
-> documented as the owner's non-blocking responsibilities in
+> institutional affiliation. Institutional items are recorded
+> `NOT_APPLICABLE` (never `APPROVED`). **On 2026-11-16 the follow-on
+> "personal public-data compliance gate" (checklist statuses plus
+> script enforcement) was removed: repository work is never blocked by
+> an approval workflow.** Data basis (attested 2026-11-16): the owner
+> holds **independent authorization from the distributor** (USC DABI)
+> for analysis and publication of research findings; the data itself is
+> not redistributable and stays on the owner's machine, outside the
+> repository. Data, licensing, privacy, and attribution considerations
+> are documented as the owner's non-blocking responsibilities in
 > [`docs/approvals.md`](approvals.md) (notices) and
 > [`docs/data_access.md`](data_access.md) (register and guidance). The
 > rest of this document keeps its historical planning content, with
@@ -133,18 +135,18 @@ Permitted public artifacts:
 
 The institutional track was retired on 2026-11-15 (see the governance
 amendment at the top of this document): no institution-approved account
-exists or is sought, and restricted or former-lab data is out of scope
-outright. An external-data track, if ever opened, uses the same
-versioned source and infrastructure modules on personal resources with
-public data whose facts are recorded in the
-[`docs/data_access.md`](data_access.md) register (recommended guidance,
-never a blocker — see the amendment). Its per-subject results,
+exists or is sought. Since 2026-11-16 the external-data track is in
+**local use under the owner's independent distributor authorization**
+(USC DABI — analysis and publication of findings authorized; the data
+itself is not redistributable). It uses the same versioned source and
+infrastructure modules on personal resources; its per-subject results,
 artifacts, reference distributions, experiment tracking, Terraform
-state, and logs stay outside the public track.
+state, and logs stay outside the public track
+([`docs/data_access.md`](data_access.md)).
 
 ### 5.3 Prohibited crossings
 
-The following must never enter the public track. For the former-lab dataset and any restricted material there is no approval path — they are prohibited outright:
+The following must never enter the public track. The authorized DABI data may be processed locally only — it never crosses; the former lab's own artifacts are prohibited outright:
 
 - Former-lab or restricted data of any kind.
 - Raw or transformed patient data.
@@ -423,9 +425,12 @@ Rollback: No destructive changes; reconciliation occurs on a new branch.
 ### Phase 0 — Authorization and scope freeze — RETIRED 2026-11-15
 
 **Status:** Retired. The institutional authorization phase no longer
-applies: this is an independent personal project, restricted former-lab
-data is prohibited outright, and no institutional approvals are awaited
-(former items recorded `NOT_APPLICABLE` in `docs/approvals.md`).
+applies: this is an independent personal project, and no institutional
+approvals are awaited (former items recorded `NOT_APPLICABLE` in
+`docs/approvals.md`). *(The 2026-11-15 "restricted former-lab data is
+prohibited outright" wording was superseded on 2026-11-16 by the
+owner's independent distributor authorization — see the amendment at
+the top of this document.)*
 
 Replacement: the owner-responsibility notices in
 [`docs/approvals.md`](approvals.md) with the register and guidance in
@@ -631,7 +636,7 @@ The runbook must include an after-destroy check covering ECS, load balancers, NA
 | Risk | Likelihood/impact | Mitigation | Trigger or owner action |
 |---|---|---|---|
 | Repository changes make the verified baseline stale | Medium / Medium | Re-run the Phase R checks before implementation and record the new commit | Refresh the baseline when implementation begins |
-| Restricted or former-lab data tempts the project back | Low (out of scope) / Critical | Out of scope outright; external-data work with public data whose facts are recorded (guidance) | Decline; record the decision in the register |
+| Data used beyond the recorded authorization terms | Low / Critical | Local-only processing; findings published as findings, never as data; register records the terms | Stay within the authorization; update the register if terms change |
 | Kinematic evaluation is null or negative | High / Medium | Show baselines and `beats_baseline`; do not tune after viewing results | Retain as honest feasibility result |
 | Tiny cohort produces unstable estimates | High / High | LOSO, cluster bootstrap, permutation null, per-subject review, strong limitations | Avoid generalization claims |
 | Data or artifacts cross the trust boundary | Low / Critical | Separate accounts/stores, build exclusions, scans, least privilege, no payload logs | Stop deployment and follow incident runbook |

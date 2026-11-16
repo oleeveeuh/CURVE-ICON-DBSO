@@ -49,9 +49,10 @@ Read this before drawing any conclusion from this repository.
 
 ## Engineering / reproducibility
 
-- The restricted dataset is not available for verification; the
-  corrected evaluation logic is verified on deterministic synthetic
-  data only.
+- The pilot dataset is available to the owner locally under the
+  distributor authorization; the corrected evaluation logic has so far
+  been verified on deterministic synthetic data, with the first
+  authorized real-data run still pending.
 - Historical results in `figures/archive/` are invalid (misaligned
   OOF pairing, full-dataset preprocessing leakage, a random
   placeholder fallback) and are retained solely to document the

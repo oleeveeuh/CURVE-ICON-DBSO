@@ -107,8 +107,8 @@ def test_mlflow_store_is_gitignored():
 # --- external-data script: rehearsal on synthetic fixtures only ---------------
 
 ACK = (
-    "Public kinematics dataset (placeholder example), license recorded in "
-    "docs/data_access.md."
+    "USC DABI pilot collection — used under the owner's independent "
+    "distributor authorization; recorded in docs/data_access.md."
 )
 
 

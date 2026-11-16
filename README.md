@@ -30,12 +30,12 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
 - **Question:** can HFO + clinical features relate to motor improvement (% UPDRS
   change) after DBS, measurable at pilot scale? *(Answer at this sample size: not
   reliably — and that is the honest result.)*
-- **Data:** the historical pilot used restricted former-lab data (USC DABI via
-  the ICON Lab) that was never distributed here and is **no longer used — it
-  is out of scope in this independent personal project**; all runnable code
-  paths are verified on deterministic synthetic data, and any future data
-  should be legitimately public (guidance in
-  [docs/data_access.md](docs/data_access.md)).
+- **Data:** the pilot data (USC DABI) is used **locally under the
+  owner's independent authorization from the distributor** — analysis
+  and publication of research findings are authorized; the data itself
+  is not redistributable and is **not included in this repository**.
+  All runnable code paths are also verified on deterministic synthetic
+  data ([docs/data_access.md](docs/data_access.md)).
 - **Correction story:** the original pipeline reported R² = 0.713 (README) while its
   own figures showed −0.672. Root cause found: fold-order predictions saved against
   original-row-order subjects. This repository contains the corrected evaluation,
@@ -73,7 +73,7 @@ verification is synthetic.
 
 | Item | Value |
 |---|---|
-| Source | USC DABI (Data Archive for the BRAIN Initiative), via the ICON Lab — historical, restricted, **no longer used; see [docs/data_access.md](docs/data_access.md)** |
+| Source | USC DABI (Data Archive for the BRAIN Initiative) — processed locally under the owner's independent distributor authorization; **data not included in this repository** (see [docs/data_access.md](docs/data_access.md)) |
 | Modalities | UPDRS assessments (pre/post) · intracranial ECoG + recording metadata · cortical thickness (MRI) · HFO features |
 | Cohort | **8 unique subjects, 9 recordings** — one subject contributes 2 recordings (REST + MOVE); remaining subjects contribute 1 |
 | Counts in results | Every result reports both subject and recording counts |
@@ -200,29 +200,38 @@ curve-icon-demo --output-dir outputs/synthetic_demo
 python scripts/make_figures.py
 ```
 
-## Using an external (non-synthetic) dataset
+## Using the authorized dataset (local, non-synthetic)
 
-No third-party dataset is in this repository. This independent project
-is designed for legitimately public data: record the dataset's facts in
-the register ([docs/data_access.md](docs/data_access.md)) — name,
-canonical URL, version/accession, access date, license or terms,
-permitted uses, attribution requirements, and redistribution/training
-restrictions. This is recommended guidance, never a blocker: nothing in
-the repository gates work on a register entry or any approval status.
-Restricted, private, identifiable, or former-lab data is out of scope
-for this project. Then store the data locally and:
+No third-party data is in this repository. The pilot dataset (USC DABI)
+is used **locally** under the owner's independent authorization from
+the distributor: analysis and publication of research findings are
+authorized; the data itself is not redistributable and stays on the
+owner's machine, outside this checkout (details and the register:
+[docs/data_access.md](docs/data_access.md); owner-responsibility
+notices: [docs/approvals.md](docs/approvals.md)).
+
+Two analysis entry points, both printing a non-blocking data-use
+reminder and defaulting outputs outside the repository:
 
 ```bash
+# outcome-analysis HFO features from per-subject .mat folders:
 python scripts/run_hfo_extraction.py \
-  --input-dir /your/local/path/all_subs_preprocessed_data \
-  --output-csv /your/local/outputs/hfo_channels.csv \
-  --aggregated-csv /your/local/outputs/hfo_subjects.csv \
+  --input-dir /local/path/to/all_subs_preprocessed_data \
+  --output-csv /local/outputs/hfo_channels.csv \
+  --aggregated-csv /local/outputs/hfo_subjects.csv \
   --band-low 80 --band-high 500 --fs-override 1200
-```
 
-The extraction script prints a non-blocking data-use reminder. Details
-and the register: [docs/data_access.md](docs/data_access.md); the
-owner-responsibility notices are [docs/approvals.md](docs/approvals.md).
+# kinematic analysis: per-recording .npz files -> feature table ->
+# grouped-CV evaluation (see scripts/build_kinematic_table.py --help
+# and scripts/evaluate_real_kinematics.py --help for the contracts)
+python scripts/build_kinematic_table.py \
+  --input-dir /local/path/to/recordings_npz \
+  --output-csv /local/outputs/kinematic_recordings.csv
+python scripts/evaluate_real_kinematics.py \
+  --features-csv /local/outputs/kinematic_recordings.csv \
+  --output-dir /local/outputs/kinematic_results \
+  --stage exploratory
+```
 
 ## Phase 2: synthetic inference service (research demonstration)
 
@@ -423,13 +432,14 @@ participant data out of version control.
 
 ## Data citation and license
 
-- **Data:** the historical pilot data (USC DABI via the ICON Lab) is retired —
-  out of scope in this project. Any future public dataset should be
-  recorded with its canonical URL, version/accession, access date,
-  license or terms, permitted uses, attribution requirements, and
-  redistribution/training restrictions in the register
-  ([docs/data_access.md](docs/data_access.md)). No dataset is recorded
-  yet, so there is no dataset citation to publish.
+- **Data:** the pilot dataset (USC DABI) is used locally under the
+  owner's independent authorization — analysis and publication of
+  research findings are authorized; the data itself is not
+  redistributable. Its citation facts (collection title/accession, DOI,
+  access date, required attribution) are recorded in the register
+  ([docs/data_access.md](docs/data_access.md)); the
+  `[REQUIRED]` placeholders there are completed from the authorization
+  documents and must be filled before any publication of findings.
 - **License:** [MIT](LICENSE) (decided 2026-11-16). The code is MIT-licensed;
   no dataset is included or distributed with this repository, and any
   third-party data you bring remains governed by its own recorded terms.

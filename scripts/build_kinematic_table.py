@@ -79,10 +79,11 @@ QC_COLUMNS = (
 )
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): before using non-synthetic data, confirm it is "
-    "lawful to use for this purpose — genuinely public source, license/terms "
-    "permitting the use, and no restricted, private, identifiable, or "
-    "former-lab material. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): confirm this data use is covered by your "
+    "documented authorization from its distributor (analysis and "
+    "publication of findings; the data itself is not redistributable), "
+    "and keep raw data, subject codes, and per-subject outputs outside "
+    "the repository. See docs/data_access.md and docs/approvals.md. "
     "This reminder never prevents a run."
 )
 

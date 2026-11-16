@@ -49,7 +49,7 @@ mean approved, and no institutional approval is claimed or implied.
 |---|---|---|
 | 1 | PI scope approval (gated real-data work) | No PI and no institutional affiliation; scope is set by the project owner |
 | 2 | IRB / human-subjects determination | No human-subjects research is conducted; only legitimately public, non-identifying data may be used |
-| 3 | DUA permissions (former-lab USC DABI / ICON Lab data) | No DUA exists or is sought; the former-lab restricted dataset is out of scope |
+| 3 | DUA permissions (former-lab USC DABI / ICON Lab data) | The former lab's DUA is not used and is not sought; the owner holds **independent authorization from the distributor** (attested 2026-11-16 — analysis and publication of findings authorized; the data itself is not redistributable) |
 | 4 | Institutional AWS and security architecture | Only personal resources are used; no institutional account, system, or deployment exists |
 | 5 | Public release of cohort size and aggregate metrics (formerly PI-owned) | Publication of results is a project-owner decision |
 | 6 | Real-data model explanations (formerly PI/IRB/DUA-owned) | Explanations may be computed from lawful data at the owner's discretion (see ADR-002 for the synthetic-only public rule) |
@@ -60,20 +60,18 @@ When using any non-synthetic (external) data, the owner is responsible
 for the following. These are reminders that may be repeated by scripts
 or documentation — they never prevent any work:
 
-1. **Public-source and lawfulness.** Confirm the dataset is genuinely
-   public, comes from a legitimate distributor, is not leaked,
-   restricted, scraped from a private source, or former-lab material,
-   and is lawfully usable for the project's exploratory research and
-   model-training purpose.
-2. **License and terms.** Identify the license or terms from the source
-   itself; record permitted uses, attribution requirements, and
-   redistribution/training restrictions in the register
-   ([`docs/data_access.md`](data_access.md)); keep analysis, derived
-   artifacts, and any redistribution conformant with them.
-3. **Provenance boundaries.** Do not use restricted, private, or
-   identifiable data beyond what its public terms permit, the historical
-   former-lab dataset, institutional credentials, accounts, systems, or
-   funding.
+1. **Authorization coverage.** Confirm the data's use is covered by
+   your documented authorization from its distributor (for the DABI
+   pilot data: analysis and publication of research findings
+   authorized; the data itself is not redistributable), and record the
+   dataset's facts in the register ([`docs/data_access.md`](data_access.md)).
+2. **Terms conformance.** Keep analysis, derived artifacts, attribution,
+   and any publication conformant with the agreement's terms; publish
+   findings, never the data.
+3. **Provenance boundaries.** Stay within the authorization terms; no
+   raw data, subject codes, or per-subject outputs in the repository or
+   public track; no institutional credentials, accounts, systems, or
+   funding; the former lab's own artifacts are prohibited outright.
 4. **No endorsement or affiliation.** Keep documentation, metadata, and
    derived artifacts free of statements implying institutional or
    former-lab endorsement, affiliation, sponsorship, or approval.

@@ -31,8 +31,8 @@ flowchart LR
         BOOT --> REP["reporting / figures"]
         PERM --> REP
     end
-    subgraph real["External-data track (not in use)"]
-        REAL["public data only<br/>local paths only<br/>restricted / former-lab data out of scope"] -.->|"non-blocking data-use reminder<br/>(docs/data_access.md guidance)"| GATE["evaluate_real_kinematics.py<br/>always runs; optional<br/>--acknowledge-data-use provenance note"]
+    subgraph real["External-data track (local, authorized)"]
+        REAL["DABI pilot data — owner's distributor<br/>authorization; local paths only;<br/>never enters the public track"] -.->|"non-blocking data-use reminder<br/>(docs/data_access.md guidance)"| GATE["evaluate_real_kinematics.py<br/>always runs; optional<br/>--acknowledge-data-use provenance note"]
     end
     real -.->|"never crosses"| synthetic
 ```
@@ -135,8 +135,8 @@ flowchart TB
         SMOD["synthetic-trained model + manifest<br/>+ reference aggregates"]
         PERF["synthetic deployment performance<br/>and reliability results"]
     end
-    subgraph inst["EXTERNAL-data track (not in use — guidance: docs/data_access.md)"]
-        RDATA["public third-party data only<br/>(restricted / former-lab data out of scope)"]
+    subgraph inst["EXTERNAL-data track (local, authorized — docs/data_access.md)"]
+        RDATA["DABI pilot data — owner's distributor authorization<br/>(local copy; the data itself is not redistributable)"]
         ROUT["per-subject outputs / external artifacts<br/>/ external MLflow stores"]
         RMOD["externally trained model / explainers"]
     end

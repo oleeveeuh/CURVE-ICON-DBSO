@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """Kinematic evaluation on external (non-synthetic) data.
 
-**Non-blocking data guidance (docs/data_access.md):** before using any
-non-synthetic data, confirm it is lawful to use — a genuine public
-source, license/terms permitting the use, and no restricted, private,
-identifiable, or former-lab material (owner responsibilities in
-``docs/approvals.md``). This script prints that reminder when
-``--acknowledge-data-use`` is not given; the flag is optional and is
-recorded in the run summary as provenance when supplied. Nothing is
+**Non-blocking data guidance (docs/data_access.md):** the pilot dataset
+is used under the owner's documented authorization from its distributor
+(analysis and publication of findings; the data itself is not
+redistributable). This script prints a reminder of those responsibilities
+when ``--acknowledge-data-use`` is not given; the flag is optional and
+is recorded in the run summary as provenance when supplied. Nothing is
 ever refused on its basis, and repository work is never gated on any
 register or approval status.
 
@@ -58,15 +57,16 @@ from curve_icon_dbso.kinematics import (
 from curve_icon_dbso.reporting import save_outputs
 
 PROVENANCE_REAL_KINEMATIC = (
-    "public third-party data — locally supplied copy; "
+    "DABI — authorized local copy (owner agreement); "
     "exploratory kinematic target; NOT DBS outcome"
 )
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): before using non-synthetic data, confirm it is "
-    "lawful to use for this purpose — genuinely public source, license/terms "
-    "permitting the use, and no restricted, private, identifiable, or "
-    "former-lab material. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): confirm this data use is covered by your "
+    "documented authorization from its distributor (analysis and "
+    "publication of findings; the data itself is not redistributable), "
+    "and keep raw data, subject codes, and per-subject outputs outside "
+    "the repository. See docs/data_access.md and docs/approvals.md. "
     "This reminder never prevents a run."
 )
 

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Run HFO feature extraction on locally supplied ECoG ``.mat`` data.
 
-Point this at your own local copy of whichever dataset you are using
-(see docs/data_access.md for the non-blocking data guidance). The
-script never ships with or searches for data: a missing input directory
-is a hard, actionable error — never a placeholder. It prints a
-non-blocking reminder about the owner's data-use responsibilities;
-nothing is gated on any register or approval status.
+Point this at your local copy of the authorized dataset (see
+docs/data_access.md for the authorization basis and the non-blocking
+data guidance). The script never ships with or searches for data: a
+missing input directory is a hard, actionable error — never a
+placeholder. It prints a non-blocking reminder about the owner's
+data-use responsibilities; nothing is gated on any register or
+approval status.
 """
 
 from __future__ import annotations
@@ -20,10 +21,11 @@ from curve_icon_dbso.errors import CurveIconError
 from curve_icon_dbso.hfo import aggregate_to_subject, extract_dataset
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): before using non-synthetic data, confirm it is "
-    "lawful to use for this purpose — genuinely public source, license/terms "
-    "permitting the use, and no restricted, private, identifiable, or "
-    "former-lab material. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): confirm this data use is covered by your "
+    "documented authorization from its distributor (analysis and "
+    "publication of findings; the data itself is not redistributable), "
+    "and keep raw data, subject codes, and per-subject outputs outside "
+    "the repository. See docs/data_access.md and docs/approvals.md. "
     "This reminder never prevents a run."
 )
 

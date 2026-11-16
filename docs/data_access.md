@@ -8,25 +8,28 @@ of service, no imaging, no per-subject outputs. The pipeline works on
 a deterministic synthetic cohort (`curve_icon_dbso.synthetic`) so the
 code can be verified without any data access.
 
-## Historical data source (retired) and the public-data rule
+## Historical data source and the current authorization basis
 
-The restricted data used in the historical pilot came from the USC
-**DABI** initiative (Data Archive for the BRAIN Initiative) and was
+The data used in the historical pilot came from the USC **DABI**
+initiative (Data Archive for the BRAIN Initiative) and was originally
 accessed through the Informatics and Computing in Neuroscience
 (**ICON**) Lab at the University of Southern California.
 
-That former-lab, restricted dataset is **no longer part of this
-project — it is out of scope**. This is an independent personal
-project with no institutional affiliation: it does not use private lab
-data, restricted datasets, institutional credentials, accounts,
-systems, funding, or unpublished lab materials. No DUA exists or is
-sought; the institutional items are recorded `NOT_APPLICABLE`
-([docs/approvals.md](approvals.md)).
+**Current basis (owner attestation, 2026-11-16):** the project owner
+holds an **independent authorization from the distributor** — not via
+the former lab — authorizing use of the data in **analysis and
+publication of research findings**. **The data itself may not be
+published or redistributed** by this project. The former-lab items are
+recorded `NOT_APPLICABLE` ([docs/approvals.md](approvals.md)); the
+analysis runs on a local copy held by the owner, outside this
+repository.
 
-Any non-synthetic data this project uses should be legitimately
-public. Recording its facts in the register below is recommended
-guidance — it is never a precondition, and nothing in the repository
-blocks work pending it.
+Standing rules that do not change with the authorization: no raw data,
+subject codes, per-subject outputs, or identifiers ever enter the
+repository or the public track; findings are published as findings
+(aggregates), never as redistributed data. Recording the dataset's
+facts in the register below is recommended guidance — nothing in the
+repository blocks work pending it.
 
 ## Dataset register (guidance, not a gate)
 
@@ -37,23 +40,36 @@ guessed: until the facts are looked up, they stay explicit
 readers and a record of the owner's due diligence; missing or
 incomplete entries never block any repository work.
 
-### Entry — (no public dataset recorded yet)
+### Entry — USC DABI kinematic/ECoG pilot collection
 
-- Dataset name: **[REQUIRED — no public dataset has been recorded]**
-- Canonical URL: **[REQUIRED]**
-- Version / accession: **[REQUIRED if the source provides one]**
-- Access date: **[REQUIRED]**
-- License or terms: **[REQUIRED]**
-- Permitted uses: **[REQUIRED]**
-- Attribution requirements: **[REQUIRED]**
-- Redistribution / training restrictions: **[REQUIRED]**
+- Dataset name: **USC DABI (Data Archive for the BRAIN Initiative) —
+  the pilot intracranial/ECoG collection used for the kinematic
+  analysis** *(exact collection title/accession [REQUIRED — from the
+  authorization documents])*
+- Canonical URL: **[REQUIRED — DABI dataset page/DOI]**
+- Version / accession: **[REQUIRED]**
+- Access date: **[REQUIRED — date of the owner's own authorization]**
+- Authorization basis: **the owner's independent agreement with the
+  distributor (owner attestation 2026-11-16; not via the former lab)**
+- License or terms: **[REQUIRED — verbatim citation from the
+  agreement]**
+- Permitted uses: **analysis and publication of research findings
+  (owner attestation 2026-11-16)**
+- Attribution requirements: **[REQUIRED — required citation text]**
+- Redistribution / training restrictions: **the data itself may not be
+  published or redistributed; it stays on the owner's machine, outside
+  this repository; findings are published as findings, never as data**
 
-## If you adapt this pipeline to a public dataset
+Facts marked `[REQUIRED]` come only from the authorization documents
+and are never guessed. The attested permitted/restricted uses above are
+the owner's summary; the agreement text governs.
 
-1. Record the dataset's facts in the register above (recommended).
-   A code repository license — even where one exists — grants **no**
-   rights to third-party data, and this project does not use
-   restricted, private, identifiable, or former-lab data.
+## If you adapt this pipeline to the authorized dataset
+
+1. Keep the data and anything derived from it **outside the
+   repository**, and complete the register facts above from the
+   authorization documents (recommended). A code repository license —
+   even this one — grants **no** rights to third-party data.
 2. Store the data locally, outside this repository (the `.gitignore`
    blocks common data file types, but do not rely on that alone).
 3. Run the extraction step against your local copy, for example:
@@ -93,28 +109,29 @@ The project operates two separated tracks
 versioned code may run in both, but their data, models, logs, state, and
 accounts never mix.
 
-| | Public synthetic track | External-data track (not currently in use) |
+| | Public synthetic track | External-data track (local, authorized) |
 |---|---|---|
-| Data | Deterministic synthetic data only | Public third-party data; restricted, private, identifiable, and former-lab data are out of scope |
-| Models | Synthetic-trained model, manifest, reference aggregates | Artifacts trained on recorded public data, under its terms |
-| Storage | This repository; personal AWS account (synthetic only) | Personal resources only; institutional accounts are out of scope entirely |
-| Status | Active | Not in use (the guidance in this file applies if it is ever opened) |
+| Data | Deterministic synthetic data only | DABI pilot data under the owner's distributor authorization — local copy only, never redistributed |
+| Models | Synthetic-trained model, manifest, reference aggregates | Artifacts trained on the authorized data — local only |
+| Storage | This repository; personal AWS account (synthetic only) | The owner's local machine; never the repository or the public track |
+| Status | Active | In local use (authorization attested 2026-11-16) |
 
-## Out-of-scope material
+## Out-of-scope material (public track)
 
 The following never enter the public track (repository, personal
-cloud account, container image, public log, or CI artifact). For the
-former-lab dataset and any restricted material there is no approval
-path — they are out of scope outright. Aggregates from a public
-dataset may be published only as its recorded terms and attribution
-requirements allow:
+cloud account, container image, public log, or CI artifact). The
+authorized DABI data may be processed **locally** — it never crosses;
+the former lab's own artifacts remain prohibited outright. Findings
+are published as findings (aggregates), only as the recorded terms and
+attribution requirements allow:
 
-- raw or transformed patient data;
+- raw or transformed patient data (the local copy never leaves the
+  owner's machine);
 - subject codes, including values matching `DBS_bG*`;
 - per-subject predictions or errors;
-- former-lab model weights, explainers, training fingerprints, or
-  feature distributions;
-- former-lab MLflow runs and artifacts;
+- the dataset itself, in any redistributable form;
+- the former lab's model weights, explainers, training fingerprints,
+  feature distributions, MLflow runs, and artifacts;
 - real request or response bodies;
 - small-cell aggregates or metrics whose publication the recorded
   terms do not clearly permit.
@@ -124,12 +141,12 @@ requirements allow:
 | Class | Examples | Where allowed |
 |---|---|---|
 | Public-safe | source code, tests, documentation, schemas, synthetic generator/fixtures/payloads, synthetic-trained model + manifest + reference aggregates, Dockerfile, parameterized Terraform, CI/CD definitions, performance and reliability results from the synthetic deployment only | repository, personal AWS, public CI |
-| Restricted derived | former-lab or restricted per-subject metrics tables, per-subject predictions/errors, model artifacts and explainers, experiment (MLflow) stores, reference distributions | nowhere in this project — out of scope outright |
+| External-track derived | per-subject metrics tables, per-subject predictions/errors, models and explainers trained on the authorized data, external MLflow stores, reference distributions | **local machine only, outside the repository** — never committed, never published; the former lab's own artifacts are prohibited outright |
 | Dataset register entries | register facts and notes (no credentials, account IDs, or per-subject values) | this repository, per [`docs/approvals.md`](approvals.md) |
 
 ## Recommended storage locations
 
-- **External (non-synthetic) data:** local, user-supplied paths outside
+- **External (non-synthetic) data:** the owner's local copy, outside
   this repository checkout (`data/` is gitignored, but do not rely on
   gitignore alone).
 - **External per-subject outputs:** outside the repository by default;
@@ -141,10 +158,9 @@ requirements allow:
   destroyed 2026-11-15; only the Terraform remote-state store is
   retained — see [deployment_report.md](deployment_report.md)) and is
   re-created per-deployment from the runbook.
-- **External-data cloud:** personal resources only, for lawfully usable
-  public data used under its recorded terms. Institutional accounts are
-  out of scope entirely; a former-lab or restricted dataset is never
-  acceptable anywhere, even temporarily.
+- **External-data cloud:** none — the authorized data and everything
+  derived from it stays on the owner's local machine; institutional
+  accounts are out of scope entirely.
 - **Terraform state:** private remote backend with locking and encryption;
   never committed.
 - **Experiment lineage:** the default local MLflow store (`mlruns/`,
@@ -157,11 +173,11 @@ requirements allow:
 
 - Synthetic MLflow stores and generated synthetic artifacts are disposable and
   may be deleted freely; they are gitignored and never published.
-- Former-lab and restricted artifacts must not exist or be retained
-  anywhere in this project. Artifacts derived from a public dataset are
-  retained only as its recorded terms allow and are deleted when no
-  longer needed; while the terms are unrecorded, prefer not retaining
-  real-derived artifacts in any cloud location.
+- The former lab's own artifacts (weights, explainers, experiment
+  stores) must not exist anywhere in this project. Artifacts derived
+  from the authorized data stay on the owner's machine and are retained
+  only as the agreement's terms allow; delete them when no longer
+  needed.
 - Cloud environments default to zero running tasks when idle and are destroyed
   between milestones; the runbook (`docs/runbook.md`, Phases 3–5) includes an
   after-destroy orphan-resource check (ECS, load balancers, NAT gateways,
@@ -193,16 +209,16 @@ container image, logs, CI artifacts):
 Any repository script that reads non-synthetic (external) data:
 
 1. **prints a reminder** about the owner's data responsibilities
-   (lawful public source, license/terms, no restricted, private,
-   identifiable, or former-lab material) — purely informational; the
-   reminder never prevents a run. `scripts/evaluate_real_kinematics.py`
-   accepts an optional `--acknowledge-data-use` note that is recorded in
-   the run summary as provenance when given, and prints the reminder
-   when it is not;
+   (use covered by the documented distributor authorization; raw data,
+   subject codes, and per-subject outputs stay out of the repository) —
+   purely informational; the reminder never prevents a run.
+   `scripts/evaluate_real_kinematics.py` accepts an optional
+   `--acknowledge-data-use` note that is recorded in the run summary as
+   provenance when given, and prints the reminder when it is not;
 2. **defaults outputs outside the repository checkout** and prints a
    warning (never an error) if an in-repository output path is used;
 3. **records provenance** on its outputs
-   (`public third-party data — locally supplied copy; exploratory
+   (`DABI — authorized local copy (owner agreement); exploratory
    kinematic target; NOT DBS outcome`, per the methodology's labeling
    convention).
 
