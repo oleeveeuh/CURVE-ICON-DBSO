@@ -1,4 +1,4 @@
-# Runbook — public synthetic AWS track (Phases 3–4)
+# Runbook — public synthetic AWS track (Phases 3–5)
 
 **Scope:** the single ephemeral `dev` environment described by
 [ADR-004](decisions/ADR-004-public-ingress-and-tls.md) and
@@ -86,6 +86,10 @@ Then edit `infra/environments/dev.tfvars`: set the real
 `budget_alert_email` (the deploy workflow refuses to apply while the
 `REPLACE` placeholder remains) and uncomment/fill
 `state_bucket_name` / `state_lock_table`.
+(In this checkout both were filled on 2026-11-14 — the bucket is
+`curve-icon-dbso-tfstate-fdf9b4aa`, the table `curve-icon-dbso-tfstate-locks`
+— and the values survive a destroy, so a redeploy does not need to redo
+this step unless the bootstrap stack is rebuilt.)
 
 ## 2. One-time GitHub repository setup
 
@@ -240,6 +244,98 @@ You will receive email at `budget_alert_email`:
 
 ⚠️ Alert emails do not stop spend — only you do (§6/§9).
 
+## Apply warning — ALWAYS pass the full variable set
+
+Every `terraform apply` on this root must carry `-var-file=environments/dev.tfvars`
+**plus** `-var "container_image=<repo-url>@sha256:..."` and
+`-var "desired_count=1"` (or the intended count). An apply that omits them
+silently reverts to the tfvars idle defaults — **desired_count = 0 and the
+bootstrap placeholder image** — taking a running deployment down. This bit
+once during the Phase 5 observability apply (2026-11-15) and was restored
+within minutes; the alarm/watch pattern is: after ANY apply, re-check
+`desired_count` via §5 verify.
+
+## 8b. Alarm triage (OBS-002) {#alarm-triage}
+
+Four alarms notify `budget_alert_email` via the `${prefix}-alarms` SNS
+topic (one-time email confirmation required after first apply). Dashboard:
+CloudWatch → Dashboards → `curve-icon-dbso-dev-dashboard`.
+
+| Alarm | Fires when | First actions (✅ SAFE unless noted) |
+|---|---|---|
+| `*-http-5xx-ratio-high` | >1 % of requests 5xx for 5 min | `aws logs tail /ecs/curve-icon-dbso-dev --since 15m` — look for `internal_error` classes; check `RunningCount` (§5); recent deploy? roll back (§7) |
+| `*-target-p95-latency-high` | p95 > 200 ms for 5 min | confirm with the dashboard p50/p95 widget; single task at 0.25 vCPU — check ECS CPU/Mem widget; scale-out is NOT available by design (demo) — reduce load or roll back a recent image change |
+| `*-unhealthy-targets` | any target unhealthy 5 min | `aws ecs describe-services ... --query 'services[0].[runningCount,deployments]'`; failing health checks = failing image → §7 rollback |
+| `*-unexpected-restarts` | ≥2 server starts in 5 min (crash loop) | `aws logs tail` for `error_class` on the startup lines; a rolling deploy contributes exactly 1 — bursts mean crash loop → §7 rollback |
+
+Alarm-email subscription is pending until the owner clicks the SNS
+confirmation link (sent on first apply).
+
+## 8c. Load test (OBS-003/OBS-004) {#load-test}
+
+✅ SAFE (read-only against the service; generates load):
+
+```bash
+# 15 minutes total: ramp 1→50 users over 5 min, sustain 50 for 10 min.
+# Payloads are generated schema-valid synthetic rows only.
+uv run --extra cloud locust -f locust/locustfile.py --headless \
+  -H https://$(cd infra && terraform output -raw cloudfront_domain) \
+  --csv locust/results --html locust/report.html
+```
+
+Acceptance (measured per run, archived with versions): p95 < 200 ms,
+error rate < 0.1 %, zero task restarts, stable ECS memory. Report files
+(`locust/results_*.csv`, `report.html`) contain aggregate statistics
+only — never payloads. Archive them with the model version (from
+`/model-info`), image digest (`aws ecr describe-images`), and the
+task-definition revision.
+
+## 8d. Drift demonstration (OBS-006/OBS-007) {#drift-demo}
+
+✅ SAFE (synthetic data, local execution):
+
+```bash
+.venv/bin/python scripts/train_synthetic_model.py        # rebuild with reference aggregates
+.venv/bin/python scripts/drift_demo.py                   # clean vs shifted samples
+.venv/bin/python scripts/drift_demo.py --output reports/drift-$(date +%F).json
+```
+
+The clean sample (same cohort seed as the artifact reference) must show
+PSI ≈ 0 on every feature; the shifted sample crosses the 0.2 warning
+threshold. PSI > 0.2 here is a documented educational warning, NOT
+validated clinical drift monitoring and NOT a model-decay claim. The
+report contains aggregate PSI floats only — never raw feature values.
+
+## 8e. Failure and rollback exercise (Phase 5, owner-gated)
+
+🛑 **APPROVAL-GATED**: deploying a deliberately failing image requires the
+owner's explicit go in the conversation. The mechanism: the image builds
+with `--build-arg FAILURE_DEMO=1` (Dockerfile), which removes the trained
+artifact directory — the fail-closed readiness path (MOD-003) then returns
+503 forever, and the deployment fails ALB health checks. Expected chain:
+unhealthy-target alarm → deployment circuit breaker rolls back
+automatically → service returns to the prior known-good revision.
+
+```bash
+SHA12=$(git rev-parse --short=12 HEAD)
+docker build --build-arg FAILURE_DEMO=1 --build-arg SOURCE_SHA=$(git rev-parse HEAD) \
+  -t curve-icon-dbso-api:sha-$SHA12-failure-demo .
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin <account>.dkr.ecr.us-east-2.amazonaws.com
+docker tag curve-icon-dbso-api:sha-$SHA12-failure-demo \
+  <account>.dkr.ecr.us-east-2.amazonaws.com/curve-icon-dbso-dev-api:sha-$SHA12-failure-demo
+docker push ...:sha-$SHA12-failure-demo        # ⚠️ MUTATING (ECR)
+DIGEST=$(aws ecr describe-images --repository-name curve-icon-dbso-dev-api \
+  --image-ids imageTag=sha-$SHA12-failure-demo --query 'imageDetails[0].imageDigest' --output text)
+# 🛑 owner-approved only:
+terraform apply -var-file=environments/dev.tfvars -auto-approve \
+  -var "container_image=<repo-url>@$DIGEST" -var "desired_count=1"
+# then: watch the alarm fire, confirm the circuit breaker rollback, and
+# CONVERGE back to the good digest (terraform apply -var container_image=<good-digest> ...).
+# Do not end the exercise with the environment unhealthy.
+```
+
+
+
 ## 9. Destroy the environment
 
 🛑 APPROVAL-GATED (Prompt 6/7 owner decision) + ❌ DESTRUCTIVE:
@@ -253,9 +349,20 @@ terraform destroy \
   -var "state_lock_table=<lock_table_name>"                # ❌ DESTRUCTIVE
 ```
 
-The artifact bucket is `force_destroy` (synthetic-only content by policy),
-so destroy completes in one pass. The **remote-state stack is NOT
-destroyed** — see §10/§11.
+The artifact bucket is `force_destroy` (synthetic-only content by policy).
+The ECR repository is NOT `force_delete`: if it still holds pushed images,
+destroy fails on `RepositoryNotEmptyException` after everything else is
+gone (hit 2026-11-15). Delete the images first, then re-run the destroy —
+it will remove only the empty repository:
+
+```bash
+aws ecr batch-delete-image --repository-name ${prefix}-api \
+  --image-ids "$(aws ecr describe-images --repository-name ${prefix}-api \
+    --query 'imageDetails[].{imageDigest:imageDigest}' --output json)"  # ❌ DESTRUCTIVE
+terraform destroy -var-file=environments/dev.tfvars          # then: 1 resource
+```
+
+The **remote-state stack is NOT destroyed** — see §10/§11.
 
 ### State retention (INF-006)
 
@@ -319,7 +426,59 @@ Budget notifications arrive at $5 and $20 (INF-008). The intended pattern
 per the plan (§14): **destroy between milestones**; the environment is
 ephemeral by decision (ADR-004).
 
+**Measured operating costs (2026-11-15, us-east-2, one deployment):**
+with one task running ≈ **$0.84/day** (task ≈ $0.30 + ALB ≈ $0.54;
+CloudFront/ECR/S3/logs negligible) — this matches the ~$25–28 always-on
+planning estimate above and would breach the $20 budget inside a month.
+Scaled to zero: ≈ $0.54/day. Destroyed: ≈ $0 (state store only). See
+[deployment_report.md](deployment_report.md) §7–§8 for the burn-down
+and teardown evidence.
+
+**Teardown evidence (2026-11-15, first full destroy):** preview 50 to
+destroy → 49 removed + 1 failure (ECR `RepositoryNotEmptyException`,
+§9 two-step) + 1 destroyed on re-run; §10 orphan check returned empty
+for every resource class; `terraform state list` empty; retained items
+exactly the documented remote-state bucket + lock table. No orphaned
+billable resource remained.
+
 ---
+
+## 12. Incident response
+
+Safety events this runbook covers: suspected credential leak, real
+data/identifier exposure in the public track, and a service that is
+unhealthy or behaving unexpectedly in the cloud track.
+
+1. **Suspected credential or key leak** (any `AKIA…`, password, token,
+   or private key): rotate/revoke the credential immediately in the AWS
+   console or provider, then follow **Report**/**Preserve** in
+   [data_access.md](data_access.md § "Incident-response trigger"). This
+   repository uses no static keys by construction (CIC-003: humans use
+   profile sessions; CI uses OIDC only, and OIDC is disabled on this
+   account) — so a leak here most likely means a machine-level profile
+   cache: revoke the `aws login` session and renew.
+2. **Suspected real data, subject codes, or real-derived artifacts in
+   the public track** (repo, image, logs, CI artifact, cloud account):
+   **Stop → Preserve → Report → Remediate** exactly as written in
+   [data_access.md](data_access.md). Do NOT rewrite git history or
+   delete evidence before the exposure is documented (owner decision). Then: destroy the cloud environment (§9), purge the
+   affected ECR images (§9 two-step), and re-scan
+   (`uv run python scripts/security_scan.py`, plus a history audit)
+   before any redeploy.
+3. **Unhealthy or misbehaving deployment** (alarms from §8b, or any
+   5xx/latency/restart burst): triage per §8b; roll back per §7
+   (automatic circuit breaker or manual prior revision); if the service
+   cannot be made healthy quickly, scale to zero (§6) or destroy (§9) —
+   never leave the environment unhealthy (plan §7.12).
+4. **Budget breach** ($5/$20 notifications, §8): verify desired count
+   (§5), check for orphaned resources (§10), scale to zero (§6) or
+   destroy (§9). Alert emails do not stop spend — only you do.
+
+After any incident: record what happened, what crossed the boundary
+(if anything), and the remediation, in the conversation log and — for
+governance-relevant events — in [approvals.md](approvals.md) as redacted
+status only; verification evidence lives in the compliance register
+([data_access.md](data_access.md)) and outside the repository.
 
 ## Requirement map
 
@@ -335,3 +494,4 @@ ephemeral by decision (ADR-004).
 | §8 budgets | INF-008 |
 | §9 destroy + state retention | INF-006, plan §14 |
 | §10 orphan check | plan §14 |
+| §12 incident response | data_access.md incident trigger, CIC-003, plan §7.12 |

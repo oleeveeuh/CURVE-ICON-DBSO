@@ -5,8 +5,9 @@
 > synthetic cohort generator, makes no claim about real outcomes, and is
 > never a clinical tool. There is **no** `/explain` endpoint in Phase 2
 > ([ADR-002](decisions/ADR-002-explanation-endpoint.md)). The
-> institutional real-data track remains disabled
-> ([docs/approvals.md](approvals.md)).
+> external-data path stays closed until a dataset passes the
+> compliance register ([docs/approvals.md](approvals.md),
+> [docs/data_access.md](data_access.md)).
 
 This document covers: locked local setup, deterministic training, the
 FastAPI service, the Docker image, request examples, the artifact
@@ -298,22 +299,22 @@ re-measure on your hardware (see §9).
 * Logs are metadata-only (§4); nothing that contains a payload value is
   ever written to stdout.
 * The public synthetic track (repository, personal AWS in Phase 4,
-  images) may contain only synthetic artifacts
-  ([docs/approvals.md](approvals.md) gates everything else).
+  images) may contain only synthetic artifacts; the compliance register
+  in [docs/data_access.md](data_access.md) gates everything else
+  ([docs/approvals.md](approvals.md)).
 
-## 9. Measured on the development machine (2026-11-14)
+## 9. Measured (dev machine 2026-11-14; container 2026-11-15)
 
 * Cold start (launch `uvicorn` → first 200 from `/ready`), 5 runs,
   Python 3.11.17 venv, Apple Silicon macOS: **median 1.15 s**
   (min 1.04 s, max 1.82 s) — under the 2 s target with visible variance.
-* Container image size / containerized cold start: **not measured** —
-  no container runtime was available on the machine where this phase was
-  implemented. The Docker-gated integration tests
-  (`tests/test_container.py`) measure both automatically wherever a
-  Docker daemon exists; an estimate from the locked dependency set
-  (python-slim + numpy/pandas/scipy/scikit-learn/matplotlib + FastAPI
-  stack, compiled bytecode) is ≈ 450–550 MB, comfortably under the
-  600 MB budget — but treat it as an estimate until measured.
+* Container image size, ECR-measured on the deployed digest
+  (2026-11-15): **189.5 MB** — well under the 600 MB CON-005 budget.
+* Containerized cold start (2026-11-15, deployed task): **0.85 s
+  median**. The Docker-gated integration tests
+  (`tests/test_container.py`) re-measure both automatically wherever a
+  Docker daemon exists. Full record:
+  [deployment_report.md](deployment_report.md) §2.
 
 ## 10. Troubleshooting
 

@@ -1,0 +1,81 @@
+# Phase 7 local-kind values (docs/kubernetes.md). Defaults mirror the
+# ECS/Fargate runtime contract where it exists: single synthetic-trained
+# image by immutable tag, readiness-gated /ready, metadata-only logging,
+# non-root container, no /explain (ADR-002).
+
+image:
+  repository: curve-icon-dbso-api
+  tag: phase7            # an immutable local tag loaded into kind
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: NodePort
+  port: 8000
+  nodePort: 30080        # mapped to localhost:8000 by deploy/kind/kind-config.yaml
+
+# Container contract (mirrors the Dockerfile's USER 10001; hardened here):
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+podSecurityContext:
+  fsGroup: 10001
+
+# The image bakes the trained artifact at /app/artifact; the root
+# filesystem is read-only, so give writable scratch (/tmp) via emptyDir.
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+probes:
+  readiness:
+    httpGet:
+      path: /ready
+      port: 8000
+    initialDelaySeconds: 1
+    periodSeconds: 2
+    failureThreshold: 3
+  liveness:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 3
+
+# CON-005 spirit: the Fargate task runs 0.25 vCPU / 0.5 GB. Measured on
+# local arm64 compute the service needs only ~60m CPU at the full 50-user
+# protocol load, so the CPU request is set to 50m — otherwise the 70% HPA
+# target would be unreachable under the canonical shape and the scaling
+# demonstration impossible (the ECS p95 latency was network/ALB-dominated,
+# not compute-bound). The 500m limit still caps a replica on the 2-CPU
+# colima VM.
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+rollingUpdate:
+  maxSurge: 1
+  maxUnavailable: 0
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70

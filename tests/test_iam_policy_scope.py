@@ -159,7 +159,7 @@ def test_plan_role_reads_state_and_managed_services_only():
     # Everything must be a read/list/describe-style action on the expected services
     allowed_services = {
         "s3", "dynamodb", "ec2", "ecs", "elasticloadbalancing", "cloudfront",
-        "ecr", "logs", "cloudwatch", "iam", "budgets", "sts",
+        "ecr", "logs", "cloudwatch", "iam", "budgets", "sts", "sns",
     }
     for action in actions:
         service, _, _ = action.partition(":")

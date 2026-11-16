@@ -1,40 +1,45 @@
 #!/usr/bin/env python
-"""Approval-gated kinematic evaluation (REAL data — currently disabled).
+"""Compliance-gated kinematic evaluation (external data — currently closed).
 
-**Gate:** running this script against real data requires the institutional
-approvals recorded in ``docs/approvals.md`` (PI scope, IRB determination,
-DUA permissions, institutional account). If any item is PENDING, the
-institutional track is disabled and this script must not see real data.
+**Gate:** running this script against non-synthetic data requires a
+dataset recorded ``VERIFIED`` in the Dataset compliance register of
+``docs/data_access.md`` (public-source, license/terms, provenance
+boundary, and no-endorsement checks — semantics in
+``docs/approvals.md``). With no verified dataset the external-data path
+is CLOSED and this script must not see any data beyond synthetic test
+fixtures.
 
 **Acknowledgement rule (docs/data_access.md):** the script refuses to run
-without ``--acknowledge-data-use`` carrying the exact authorization
+without ``--acknowledge-data-use`` carrying the exact compliance
 statement, and refuses in-repository output paths — real per-subject
 outputs stay outside the checkout.
 
 **What is implemented vs intentionally not:** the evaluation half
 (grouped CV with baselines, bootstrap CIs, permutation null, provenance,
 MLflow lineage) is complete and rehearsed on synthetic fixtures in the
-test suite. The raw-file extraction half (parsing the real restmove_segs
-tables, glove channel identification, localization workbook) is
-deliberately NOT implemented: it can only be developed and verified with
-the restricted data present, and a speculative unverified loader would
-repeat the historical placeholder mistake. It will be added as the first
-approval-gated step. This script therefore consumes a per-recording
-feature table (one row per recording) produced by that future extraction
-step — which is why its input contract is a plain CSV.
+test suite. The raw-file extraction half (parsing a source's raw tables
+into a per-recording feature table) is deliberately NOT implemented: it
+can only be developed and verified against a concrete,
+compliance-verified dataset, and a speculative unverified loader would
+repeat the historical placeholder mistake. It will be added as the
+first compliance-gated step. This script therefore consumes a
+per-recording feature table (one row per recording) produced by that
+future extraction step — which is why its input contract is a plain
+CSV.
 
-Example (approval + real data required):
+Example (compliance-verified public dataset required):
 
     python scripts/evaluate_real_kinematics.py \
       --features-csv /local/outside/repo/kinematic_recordings.csv \
       --output-dir /local/outside/repo/kinematic_results \
-      --acknowledge-data-use "I am authorized under the applicable DUA to analyze this dataset." \
+      --acknowledge-data-use "This dataset is compliance-verified public data, lawfully licensed for this use, and not restricted, private, identifiable, or former-lab data." \
       --stage exploratory
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -56,11 +61,14 @@ from curve_icon_dbso.kinematics import (
 from curve_icon_dbso.reporting import save_outputs
 
 PROVENANCE_REAL_KINEMATIC = (
-    "real — authorized local access; exploratory kinematic target; NOT DBS outcome"
+    "public third-party data — compliance-verified local copy; "
+    "exploratory kinematic target; NOT DBS outcome"
 )
 
 REQUIRED_ACKNOWLEDGEMENT = (
-    "I am authorized under the applicable DUA to analyze this dataset."
+    "This dataset is compliance-verified public data, lawfully licensed "
+    "for this use, and not restricted, private, identifiable, or "
+    "former-lab data."
 )
 
 
@@ -69,8 +77,9 @@ def build_parser() -> argparse.ArgumentParser:
         prog="evaluate-real-kinematics",
         description=(
             "Subject-grouped evaluation of the prespecified kinematic analysis "
-            "on REAL data. Approval-gated: requires docs/approvals.md items 1-4 "
-            "to be APPROVED before use."
+            "on external (non-synthetic) data. Compliance-gated: requires a "
+            "VERIFIED entry in the docs/data_access.md dataset compliance "
+            "register before use."
         ),
     )
     parser.add_argument("--features-csv", type=Path, required=True,
@@ -103,14 +112,14 @@ def main(argv: list[str] | None = None) -> int:
         # ---- Gate 1: explicit acknowledgement (docs/data_access.md rule) ----
         if args.acknowledge_data_use != REQUIRED_ACKNOWLEDGEMENT:
             raise CurveIconError(
-                "Real-data evaluation requires --acknowledge-data-use to be "
+                "External-data evaluation requires --acknowledge-data-use to be "
                 f'exactly: "{REQUIRED_ACKNOWLEDGEMENT}". This flag exists so no '
-                "run can touch restricted data by accident or in a script."
+                "run can touch non-synthetic data by accident or in a script."
             )
         # ---- Gate 2: outputs outside the repository ----
         output_dir = resolve_output_dir(args.output_dir, repo_root)
-        # ---- Gate 3: institutional approvals (checked at execution time) ----
-        _check_approval_gate(repo_root)
+        # ---- Gate 3: dataset compliance register (checked at execution time) ----
+        _check_compliance_gate(repo_root)
 
         results = _evaluate(
             pd.read_csv(args.features_csv),
@@ -133,37 +142,30 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _check_approval_gate(repo_root: Path) -> None:
-    """Read docs/approvals.md and refuse to run while the institutional
-    track is disabled (any gating item not APPROVED, or checklist missing)."""
-    checklist = repo_root / "docs" / "approvals.md"
-    if not checklist.exists():
+def _check_compliance_gate(repo_root: Path) -> None:
+    """Read the Dataset compliance register in docs/data_access.md and
+    refuse to run while no third-party dataset is recorded VERIFIED."""
+    doc = repo_root / "docs" / "data_access.md"
+    if not doc.exists():
         raise CurveIconError(
-            "docs/approvals.md is missing — the approval state is unknown, so the "
-            "institutional track stays disabled."
+            "docs/data_access.md is missing — the compliance state is unknown, "
+            "so the external-data path stays CLOSED."
         )
-    blocks = checklist.read_text().split("\n### ")[1:5]
-    gate_items: dict[int, str] = {}
-    for chunk in blocks:
-        lines = chunk.splitlines()
-        heading = lines[0].strip()
-        item_number = int(heading.split(".")[0])
-        status = next(
-            (line.split(":", 1)[1].strip() for line in lines if line.startswith("- Status:")),
-            "PENDING",
-        )
-        gate_items[item_number] = status
-    unresolved = {
-        number: status
-        for number, status in sorted(gate_items.items())
-        if "APPROVED" not in status
-    }
-    if len(gate_items) < 4 or unresolved:
+    text = doc.read_text()
+    if "Dataset compliance register" not in text:
         raise CurveIconError(
-            "The institutional real-data track is DISABLED: unresolved institutional "
-            f"approvals {unresolved} (items 1-4 required). See docs/approvals.md — "
-            "real-data evaluation stays gated until every institutional item is "
-            "recorded as APPROVED."
+            "The 'Dataset compliance register' section is missing from "
+            "docs/data_access.md — the compliance state is unknown, so the "
+            "external-data path stays CLOSED."
+        )
+    statuses = re.findall(r"^- Verification status: (\S+)", text, flags=re.MULTILINE)
+    if not any(status == "VERIFIED" for status in statuses):
+        raise CurveIconError(
+            "The external-data path is CLOSED: no dataset in the "
+            "docs/data_access.md compliance register is VERIFIED (statuses "
+            f"found: {', '.join(statuses) if statuses else 'none'}). Complete "
+            "the register for a genuinely public dataset first — see "
+            "docs/approvals.md."
         )
 
 

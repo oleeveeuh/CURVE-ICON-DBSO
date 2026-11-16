@@ -24,5 +24,6 @@ overstating scientific meaning.
 ## Notes
 
 `/explain` is not an acceptance criterion for Phase 2. Any future explanation
-work must still satisfy EXP-001…006, and real-data explanations remain gated
-by `docs/approvals.md` item 6.
+work must still satisfy EXP-001…006, and explanations from non-synthetic
+data require a compliance-verified public dataset (the compliance gate in
+`docs/approvals.md`; the former item-6 PI gate was retired 2026-11-15).

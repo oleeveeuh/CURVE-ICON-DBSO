@@ -41,6 +41,26 @@ output "budget_name" {
   value       = aws_budgets_budget.monthly_cost.name
 }
 
+output "alarm_names" {
+  description = "OBS-002 alarm names (actions: SNS topic below; triage: docs/runbook.md)."
+  value = [
+    aws_cloudwatch_metric_alarm.http_5xx_ratio.alarm_name,
+    aws_cloudwatch_metric_alarm.target_p95_latency.alarm_name,
+    aws_cloudwatch_metric_alarm.unhealthy_targets.alarm_name,
+    aws_cloudwatch_metric_alarm.task_restarts.alarm_name,
+  ]
+}
+
+output "alarm_topic_arn" {
+  description = "SNS topic for alarm notifications (email subscription requires owner confirmation)."
+  value       = aws_sns_topic.alarms.arn
+}
+
+output "dashboard_name" {
+  description = "CloudWatch dashboard for OBS-001 (name is the console URL fragment)."
+  value       = aws_cloudwatch_dashboard.main.dashboard_name
+}
+
 # --- GitHub repository setup (one-time; see infra/README.md) -----------------
 
 output "github_oidc_role_arns" {

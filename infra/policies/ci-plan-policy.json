@@ -47,7 +47,13 @@
         "iam:ListAttachedRolePolicies",
         "iam:ListRolePolicies",
         "budgets:ViewBudget",
-        "sts:GetCallerIdentity"
+        "sts:GetCallerIdentity",
+        "sns:ListTopics",
+        "sns:GetTopicAttributes",
+        "sns:ListSubscriptionsByTopic",
+        "sns:ListSubscriptions",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:GetMetricData"
       ],
       "Resource": "*"
     },

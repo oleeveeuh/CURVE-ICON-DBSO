@@ -5,8 +5,8 @@
 # id, route, status, duration, row count, schema hash, model version, and
 # error class — never payloads or feature values (API-008).
 #
-# Dashboards and alarms arrive with Phase 5 (OBS-001/OBS-002) and are
-# deliberately NOT created here.
+# Dashboards and alarms (OBS-001/OBS-002) live in alarms.tf and
+# dashboard.tf, added in Phase 5.
 
 resource "aws_cloudwatch_log_group" "api" {
   name              = local.log_group_name

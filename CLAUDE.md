@@ -58,6 +58,10 @@ Where this guidance conflicts with the project's own instructions, the project's
 
 You CAN update this rule file to save a user's help_level.
 
+- SAVED help_level: LOW (chosen by the user on 2026-11-15 during Phase 6 —
+execute requests as written; ask clarifying questions only if an action
+would create a security vulnerability; do not suggest alternatives).
+
 Constraints for each level:
 
 **LOW:**

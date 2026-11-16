@@ -1,5 +1,5 @@
 """Run contract (REP-005/SCI-012), retraction-wording guard, ignored stores,
-and the approval-gated real-data script rehearsed on SYNTHETIC fixtures."""
+and the compliance-gated external-data script rehearsed on SYNTHETIC fixtures."""
 
 from __future__ import annotations
 
@@ -103,9 +103,13 @@ def test_mlflow_store_is_gitignored():
     assert tracked.returncode == 0, "uv.lock must be committed (REP-003)"
 
 
-# --- approval-gated script: rehearsal on synthetic fixtures only --------------
+# --- compliance-gated script: rehearsal on synthetic fixtures only -------------
 
-ACK = ("I am authorized under the applicable DUA to analyze this dataset.")
+ACK = (
+    "This dataset is compliance-verified public data, lawfully licensed "
+    "for this use, and not restricted, private, identifiable, or "
+    "former-lab data."
+)
 
 
 def _kinematic_feature_frame(tmp_path: Path) -> Path:
@@ -149,9 +153,10 @@ def test_real_script_refuses_without_the_exact_acknowledgement(tmp_path, capsys)
     assert "exactly" in capsys.readouterr().err
 
 
-def test_real_script_refuses_while_institutional_track_is_disabled(tmp_path, capsys):
-    """All approvals are PENDING, so the gate must block even a correct
-    acknowledgement — this is the rehearsal of the disabled state."""
+def test_real_script_refuses_while_no_dataset_is_compliance_verified(tmp_path, capsys):
+    """No dataset is VERIFIED in the docs/data_access.md compliance
+    register, so the gate must block even a correct acknowledgement —
+    this is the rehearsal of the closed state."""
     import sys
 
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -167,7 +172,7 @@ def test_real_script_refuses_while_institutional_track_is_disabled(tmp_path, cap
         "--stage", "exploratory",
     ])
     assert exit_code == 1
-    assert "DISABLED" in capsys.readouterr().err
+    assert "CLOSED" in capsys.readouterr().err
 
 
 def test_real_script_evaluation_half_runs_on_synthetic_fixture(tmp_path):

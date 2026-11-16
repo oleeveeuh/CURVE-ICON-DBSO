@@ -40,7 +40,8 @@ Read this before drawing any conclusion from this repository.
   nearly unreachable: the floor passes almost every channel and the
   ≥ 2 channel-block rule does the exclusion work. The alternative
   "share of total-spectrum power" reading would discriminate sharply.
-  This must be settled with the PI before any real-data QC decision.
+  If a public dataset with the same binning ambiguity is adopted, this
+  must be settled by the project owner before any QC decision rests on it.
 - The historical cortical-thickness "features" included accidental
   pandas merge-suffix columns (`*_x`, `*_y`); any interpretation of
   them as biomarkers is void.

@@ -227,7 +227,10 @@
         "logs:DeleteLogGroup",
         "logs:PutRetentionPolicy",
         "logs:TagResource",
-        "logs:UntagResource"
+        "logs:UntagResource",
+        "logs:PutMetricFilter",
+        "logs:DeleteMetricFilter",
+        "logs:DescribeMetricFilters"
       ],
       "Resource": "*"
     },
@@ -269,6 +272,38 @@
         "budgets:DeleteBudget",
         "budgets:DescribeBudget",
         "budgets:DescribeBudgetNotifications"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectAlarms",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DeleteMetricAlarm",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:GetMetricData",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:TagResource",
+        "cloudwatch:UntagResource",
+        "cloudwatch:SetAlarmState"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectAlarmNotifications",
+      "Effect": "Allow",
+      "Action": [
+        "sns:CreateTopic",
+        "sns:DeleteTopic",
+        "sns:Subscribe",
+        "sns:Unsubscribe",
+        "sns:SetTopicAttributes",
+        "sns:GetTopicAttributes",
+        "sns:ListSubscriptionsByTopic",
+        "sns:ListTopics",
+        "sns:TagResource",
+        "sns:UntagResource"
       ],
       "Resource": "*"
     }

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: curve-icon-dbso
+description: >-
+  Synthetic-track research demonstration inference API on Kubernetes
+  (Phase 7, LOCAL kind only). Research only; NOT for clinical use; the
+  served model is trained on synthetic data and makes no clinical claim.
+type: application
+version: 0.1.0
+appVersion: "1.0.0-synthetic"

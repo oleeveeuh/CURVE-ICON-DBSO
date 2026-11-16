@@ -78,8 +78,8 @@ rather than amplitude. Tapping conditions are intraoperative
 column records it but is not a predictor). At n ≈ 31 with 5
 predictors, any "finding" is hypothesis-generating only.
 
-**Prespecification ambiguity to resolve with the PI before any
-real-data run.** The prominence floor ("dominant peak carries ≥ 0.20 of
+**Prespecification ambiguity to resolve before any external-data
+run.** The prominence floor ("dominant peak carries ≥ 0.20 of
 total in-band power") is sensitive to the PSD binning: with the
 prespecified 1 s Welch windows the frequency resolution is 1 Hz, so the
 0.5–4.0 Hz band contains only ~4 bins and a peak-bin share below 0.20
@@ -88,7 +88,8 @@ channel and the ≥ 2 channel-block QC rule carries the exclusion. An
 alternative reading (peak share of *total-spectrum* power) would
 discriminate sharply but is not what the frozen text says. The
 implementation follows the frozen wording (`kinematics.py`); this must
-be confirmed with the PI before any real-data QC decision rests on it.
+be settled by the project owner before any external-data QC decision
+rests on it.
 
 ## Uncertainty quantification (implemented 2026-11-13)
 
@@ -129,6 +130,8 @@ evaluation exists.
 | 2026-10-03 | `382342f`–`eb45b11` | exploratory | synthetic | Corrected pipeline (LOSO, fold-local preprocessing, aligned OOF, baselines) committed and verified on synthetic fixtures; historical results retracted and archived (`bc13544`, `9b63042`). |
 | 2026-11-13 | `eb45b11` + working tree | exploratory | synthetic | Phase 1 hardening: `uv.lock` environment lock; subject-cluster bootstrap CIs (2,000 × seed 42); label-permutation null (≥ 200, conservative p); MLflow lineage (`tracking.py`, local store, synthetic-only); optional fixed-parameter XGBoost parity exercise (DD-003); kinematic extraction implemented and verified on synthetic fixtures (`kinematics.py`). No real-data run has occurred. |
 | 2026-11-14 | `eb45b11` + working tree | exploratory | synthetic | Phase 2 serving path: versioned serving schema v1.0.0 (the prespecified 7-feature outcome contract; `schema.py`); deterministic synthetic artifact build with LOSO metrics, baselines and DD-006 promotion rule (`training.py`, `artifact.py` — selected Linear Regression, `beats_baseline: true`, byte-identical reruns); FastAPI service (`/health`, `/ready`, `/model-info`, `/predict`; no `/explain` per ADR-002); non-root container definition with readiness health check. All verification on synthetic data only; no real-data run has occurred. |
+| 2026-11-14 | working tree | exploratory | synthetic | Phases 3–4: CI security gates and OIDC delivery workflows; single-root Terraform for the public synthetic AWS track (CloudFront → ALB → ECS Fargate, scale-to-zero, budgets, versioned private artifact bucket, 14-day logs) with one-time remote-state bootstrap. Owner decisions DD-004…006 ratified (ADR-004…006 Approved 2026-11-14). Region constraint: the new-AWS-experience project account's SCP denies OIDC providers and other Regions — deploys for this account are local by recorded decision. All verification synthetic-only; no real-data run. |
+| 2026-11-15 | working tree | exploratory | synthetic | Phases 4–5 deployed and verified end to end (image by digest, CloudFront smoke tests, idempotent second plan), then Phase 5: 4 alarms + SNS topic + 2 low-cardinality log metric filters + dashboard; Locust load test (34,177 requests, 0 failures, p95 110 ms, zero restarts, flat memory — synthetic payloads only); versioned synthetic reference aggregates in the artifact + PSI drift demonstration (clean max 0.005, shifted all 7 features above the educational 0.2 threshold; not clinical drift monitoring); owner-gated FAILURE_DEMO rollback exercise (unhealthy ~40 s → circuit-breaker rollback ~70 s, zero dropped requests, converged). Teardown the same day (owner decision): destroy verified by the after-destroy orphan check (all empty; remote-state bucket + lock table retained). Measured record: `docs/deployment_report.md`. No real data touched at any point. |
 
 Entries are appended after runs complete; no entry is ever rewritten.
 
@@ -179,10 +182,13 @@ hypothesis, with no data-driven selection at any point.
 **Not implemented (and therefore not claimed):** phase-amplitude
 coupling, artifact rejection (historical artifact columns were
 hard-coded zeros), SNR, temporal-stability metrics, spatial-
-distribution summaries, bootstrap confidence intervals, and
-per-patient uncertainty. Claims of "18 neural biomarkers" or "108
-features" in the historical README were unsupported: the tracked
-artifacts show 32 engineered columns, of which 2 are HFO-derived.
+distribution summaries, and per-patient uncertainty. (Cohort-level
+bootstrap confidence intervals and the label-permutation null ARE
+implemented since 2026-11-13 — see "Uncertainty quantification"
+above; per-subject uncertainty intervals are not.) Claims of "18
+neural biomarkers" or "108 features" in the historical README were
+unsupported: the tracked artifacts show 32 engineered columns, of
+which 2 are HFO-derived.
 
 ## Evaluation design (corrected)
 

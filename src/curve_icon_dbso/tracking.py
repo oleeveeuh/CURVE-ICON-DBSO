@@ -15,9 +15,10 @@ lock, schema, seed, provenance recorded per run), with two hard rules:
   contract — no placeholder values anywhere.
 
 Privacy (MOD-006): the default local store (``mlruns/``, gitignored) is for
-**synthetic** runs only. A store that logs real-data runs is restricted
-derived data: it must live inside the institutional boundary, never in
-this repository and never in a personal cloud account.
+**synthetic** runs only. Former-lab or restricted-data runs must never be
+logged anywhere in this project; a store for compliance-verified public
+data stays local and gitignored — never published in this repository or
+any cloud account.
 """
 
 from __future__ import annotations

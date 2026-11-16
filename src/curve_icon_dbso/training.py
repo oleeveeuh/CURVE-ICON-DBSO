@@ -24,8 +24,9 @@ synthetic store and stamps the real (nondeterministic) MLflow run ID;
 that path is explicitly outside the byte-determinism promise.
 
 This module trains on synthetic data ONLY by construction (the cohort
-comes from :mod:`curve_icon_dbso.synthetic`). Real-data training stays
-inside the institutional track and is gated by docs/approvals.md.
+comes from :mod:`curve_icon_dbso.synthetic`). Any non-synthetic training
+requires a compliance-verified public dataset (register in
+docs/data_access.md; gate in docs/approvals.md).
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ import hashlib
 import sys
 from pathlib import Path
 
-from . import artifact, reporting, schema, tracking
+from . import artifact, drift, reporting, schema, tracking
 from .config import ModelConfig
 from .evaluation import (
     baseline_models,
@@ -54,8 +55,9 @@ INTENDED_USE = "research only; not for clinical use"
 PROHIBITED_USES: list[str] = [
     "clinical decision support, diagnosis, or treatment selection",
     "patient care, counseling, cohort selection, or DBS programming",
-    "any use with real patient data (real data requires the institutional "
-    "track and recorded approvals; see docs/approvals.md)",
+    "any use with restricted, private, identifiable, or former-lab data "
+    "(non-synthetic data requires a compliance-verified public dataset; "
+    "see docs/data_access.md)",
     "biomarker discovery or clinical interpretation of predictions",
     "performance or generalization claims beyond this synthetic "
     "demonstration",
@@ -170,6 +172,12 @@ def train_synthetic_artifact(
         "analysis_stage": stage,
         "research_only": True,
         "not_for_clinical_use": True,
+        # OBS-006: versioned synthetic reference aggregates for the drift
+        # demonstration. Deterministic quantile bin edges + expected shares
+        # of THIS training cohort; aggregate-only (no per-row data). The
+        # reference is synthetic, NOT a real population — PSI here is an
+        # educational signal (OBS-007), never clinical drift monitoring.
+        "reference_aggregates": drift.reference_aggregates(x),
     }
 
     if use_mlflow:

@@ -1,5 +1,15 @@
 # CURVE-ICON-DBSO Implementation Prompt Pack
 
+> **Superseded governance note (2026-11-15):** the institutional approval
+> framework several prompts reference (PI scope, IRB, DUA, institutional
+> AWS/security) is retired — this is an independent personal project using
+> only legitimately public data and personal resources. The active gate is
+> the personal public-data compliance gate
+> ([`docs/approvals.md`](approvals.md); register in
+> [`docs/data_access.md`](data_access.md)). Prompts are retained verbatim
+> as build history; Prompt 10's precondition can no longer be met and its
+> goal is replaced by the compliance gate.
+
 **Purpose:** Sequenced prompts for implementing the modernization defined in `docs/mlops_extension_plan.md`.  
 **Repository:** `/Users/olivialiau/CURVE-ICON-DBSO`  
 **Use:** Run one prompt at a time, in order. Review its handoff before starting the next prompt.  
@@ -12,7 +22,7 @@
 3. Use Prompt 4 to make the remaining owner decisions before running Prompt 5.
 4. Run Prompts 5–8 sequentially.
 5. Run Prompt 9 only if the optional local Kubernetes exercise is still wanted.
-6. Run Prompt 10 only after all institutional approvals are actually documented.
+6. Prompt 10 is RETIRED (2026-11-15) — the institutional approvals it required no longer apply; its goal is replaced by the compliance gate in `docs/approvals.md` / `docs/data_access.md`.
 7. Finish with Prompt 11 for the release-readiness audit.
 
 Every implementation prompt requires the agent to:
@@ -503,7 +513,7 @@ End with local resource usage, test results, comparison conclusion, changed file
 
 ---
 
-## Prompt 10 — Institutional real-data track, approval-gated
+## Prompt 10 — Institutional real-data track, approval-gated (RETIRED 2026-11-15 — superseded by the personal public-data compliance gate; see docs/approvals.md)
 
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This prompt must not proceed unless I provide evidence that every required Phase 0 approval is complete: PI scope, IRB determination, DUA permissions, institutional security approval, institutional AWS/account decision, publication rules, and artifact-retention rules.

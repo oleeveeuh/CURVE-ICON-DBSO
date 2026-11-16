@@ -7,6 +7,18 @@
 **Audited repository:** `/Users/olivialiau/CURVE-ICON-DBSO` at commit `eb45b11`, including the five preserved working-tree modifications listed below  
 **Design approval:** DD-001 through DD-003 approved by the project owner on 2026-11-13
 
+> **Governance amendment (2026-11-15):** the institutional approval
+> framework in this plan (§5.2, §6, Phase 0) is retired. This is an
+> independent personal project with no institutional affiliation: it
+> uses only legitimately public data and personal resources, and
+> restricted or former-lab data is prohibited outright. The active gate
+> is the personal public-data compliance gate — checklist in
+> [`docs/approvals.md`](approvals.md), register in
+> [`docs/data_access.md`](data_access.md); institutional items are
+> recorded `NOT_APPLICABLE` (never `APPROVED`). The rest of this
+> document keeps its historical planning content, with operative lines
+> amended in place where they issued institutional instructions.
+
 ## 1. Purpose
 
 This document defines the requirements, controls, delivery roadmap, and approval gates for modernizing the CURVE-ICON-DBSO research project. The goal is to demonstrate current scientific-computing and MLOps skills without reviving invalidated findings, overstating a small clinical dataset, or moving restricted data into an unapproved environment.
@@ -23,7 +35,7 @@ The work is an engineering and research prototype. It is not a clinical tool, di
 1. **Scientific validity comes before deployment.** No cloud or API work may be presented as validating the underlying model.
 2. **Historical errors remain visible.** The retracted result and its causes must be documented rather than silently replaced.
 3. **Privacy is enforced structurally.** Real data and real-data-derived artifacts must be unable to enter a personal cloud account, public repository, container image, or public log.
-4. **Synthetic and institutional tracks share code, not artifacts.** The same pipeline may operate in both tracks, but their data, models, logs, state, and accounts remain separate.
+4. **Synthetic and external-data tracks share code, not artifacts.** The same pipeline may operate in both tracks, but their data, models, logs, state, and accounts remain separate.
 5. **Small-sample uncertainty is explicit.** Model comparisons, confidence intervals, and explanations must not be framed as biomarker or clinical claims.
 6. **Infrastructure must be proportional to the workload.** Complexity is added only when it answers a concrete engineering need.
 7. **Every phase is independently verifiable and reversible.** Each phase has entry criteria, deliverables, tests, an exit gate, and a rollback or cleanup procedure.
@@ -51,9 +63,9 @@ The following corrections govern all requirements and public descriptions. They 
 - Corrected evaluation: subject-grouped splitting, fold-local median imputation and scaling, fixed models, naive baselines, and index-aligned out-of-fold predictions are implemented.
 - Outcome schema: seven prespecified features are implemented in `features.PRESPECIFIED_FEATURES`.
 - Kinematic pivot: five predictors and the tapping-rate target are prespecified in `docs/methodology.md`, but the proposal states that the real-data run has not occurred.
-- Missing extension surface (updated 2026-11-13, after Phase 1): environment lock (`uv.lock`), subject-cluster bootstrap, label-permutation null, and local MLflow lineage are now implemented. Still absent: API, Dockerfile, model artifact, Terraform, deployment workflow, Locust profile, and drift monitoring (Phases 2–5).
+- Missing extension surface (updated 2026-11-15, after Phase 5): none — the API, Dockerfile, model artifact, Terraform, deployment path, Locust profile, and drift monitoring all exist and have been exercised; the cloud environment itself was deployed, verified, and destroyed (measured record: `docs/deployment_report.md`).
 
-The README still says “40 offline tests”; the current suite contains 43 passing tests. This documentation mismatch should be corrected in the next approved repository edit.
+Historical note (2026-11-13): the README once hard-coded a test count that had drifted (claimed “40”, suite was 43). Fixed by removing hard-coded counts — the README now says the count is printed by pytest, and no test or document pins a total.
 
 ### 3.2 Unit of observation
 
@@ -85,7 +97,7 @@ Invalidated scripts and figures may remain for provenance only if clearly marked
 - Build a validated FastAPI inference service and container image.
 - Provision a synthetic-only AWS deployment through Terraform.
 - Add OIDC-based continuous delivery, monitoring, drift demonstration, load testing, and cleanup controls.
-- Document the authorization path for a future institutional deployment.
+- Document the compliance path for any future external-data work.
 - Optionally demonstrate Kubernetes concepts locally if justified after measuring the ECS implementation.
 
 ### 4.2 Out of scope
@@ -112,35 +124,51 @@ Permitted public artifacts:
 - CI/CD definitions with no account IDs, secrets, or persistent credentials.
 - Performance and reliability measurements generated only from the synthetic deployment.
 
-### 5.2 Institutional real-data track
+### 5.2 External-data track (institutional form retired)
 
-The institutional track is disabled until all Phase 0 approvals are documented. If approved, it uses the same versioned source and infrastructure modules in an institution-approved account. Real data, per-subject results, real model artifacts, reference distributions, experiment tracking, Terraform state, and logs remain within that boundary.
+The institutional track was retired on 2026-11-15 (see the governance
+amendment at the top of this document): no institution-approved account
+exists or is sought, and restricted or former-lab data is prohibited
+outright. An external-data track, if ever opened, uses the same
+versioned source and infrastructure modules on personal resources and
+only with a compliance-verified public dataset
+([`docs/data_access.md`](data_access.md) register,
+[`docs/approvals.md`](approvals.md) gate). Its per-subject results,
+artifacts, reference distributions, experiment tracking, Terraform
+state, and logs stay outside the public track.
 
 ### 5.3 Prohibited crossings
 
-The following must never cross from the institutional track into the public track without explicit written approval:
+The following must never enter the public track. For the former-lab dataset and any restricted material there is no approval path — they are prohibited outright:
 
+- Former-lab or restricted data of any kind.
 - Raw or transformed patient data.
 - Subject codes, including values matching `DBS_bG*`.
 - Per-subject predictions or errors.
 - Real model weights, explainers, training fingerprints, or feature distributions.
 - Real-data MLflow runs and artifacts.
 - Request or response bodies.
-- Small-cell aggregates or metrics not approved for publication.
+- Small-cell aggregates or metrics whose publication the dataset's recorded terms do not clearly permit.
 
 ## 6. Stakeholders and approvals
 
-| Decision or approval | Accountable party | Required before |
+> Amended 2026-11-15: the four institutional rows (PI scope, IRB,
+> DUA, institutional AWS/security) and the two PI-owned publication
+> rows are retired — the project is independent and personal, and the
+> former items are recorded `NOT_APPLICABLE` in
+> [`docs/approvals.md`](approvals.md). The active gate is the personal
+> public-data compliance gate: per-dataset verification recorded in the
+> register in [`docs/data_access.md`](data_access.md).
+
+| Decision | Accountable party | Required before |
 |---|---|---|
-| Engineering prototype scope, kinematic target, and synthetic public track | PI and project owner | Real-data Phase 1 work |
-| Human-subjects/IRB determination for new analysis | PI and IRB office | Any new real-data model run |
-| DUA permission for cloud processing, copies, training, and artifact retention | PI and data provider | Institutional cloud use |
-| Institutional AWS and security architecture | Institutional security/ISO | Institutional deployment |
-| Public release of cohort size and aggregate MAE/RMSE/R² | PI | Public documentation |
-| Real-data model explanations | PI and, if applicable, IRB/DUA owner | Computing or publishing explanations |
+| Compliance verification of any third-party dataset (public source, license/terms, provenance boundary, no endorsement) | Project owner | Any use of that dataset |
 | Final public/private repository strategy | Project owner | Phase 6 publication |
 
-Approval documents must be stored privately. The repository may contain only a redacted checklist with status, date, decision owner, and any operational restriction.
+Verification evidence lives in the public register itself (dataset
+name, canonical URL, version/accession, access date, license or terms,
+permitted uses, attribution requirements, redistribution/training
+restrictions); the repository keeps no private approval correspondence.
 
 ## 7. Functional requirements
 
@@ -207,7 +235,7 @@ Requirement IDs are stable and should be referenced in issues, pull requests, te
 
 - **EXP-001:** Explanations must be labeled as model-behavior descriptions, not biomarker evidence, causal effects, or clinical interpretation.
 - **EXP-002:** Public explanations may use only the synthetic model and synthetic background/reference data.
-- **EXP-003:** Real-data explanations require explicit approval and remain inside the institutional boundary.
+- **EXP-003 (amended 2026-11-15):** Explanations from non-synthetic data require a compliance-verified public dataset (see `docs/approvals.md`); the former institutional-boundary wording is retired.
 - **EXP-004:** Any explanation output must identify method, model version, schema version, and known limitations.
 - **EXP-005:** If fold-level explanation stability is not measured, the public API must not imply stable feature ranking.
 - **EXP-006:** The `/explain` endpoint is conditional on design decision **DD-002** and may be deferred without blocking the core `/predict` service.
@@ -261,7 +289,7 @@ Requirement IDs are stable and should be referenced in issues, pull requests, te
 
 - **DOC-001:** The README must explain the corrected history, two-track boundary, research-only status, setup, tests, local run, deployment, cost, and teardown.
 - **DOC-002:** `docs/methodology.md` must contain the prespecified target, features, exclusions, evaluation protocol, and an immutable run log.
-- **DOC-003:** `docs/data_access.md` must describe authorization requirements, prohibited locations, data retention, artifact sensitivity, and approval status.
+- **DOC-003:** `docs/data_access.md` must describe the dataset compliance register requirements, prohibited locations, data retention, artifact sensitivity, and verification status.
 - **DOC-004:** `docs/runbook.md` must cover local start, deploy, verify, rollback, scale-to-zero, destroy, cost verification, credential incident response, and alarm response.
 - **DOC-005:** Public documentation must not disclose unapproved real-data metrics or imply that deployment quality establishes scientific validity.
 - **DOC-006:** A new reviewer must be able to run the synthetic local demonstration from a fresh clone in under 10 minutes.
@@ -326,7 +354,7 @@ Each reproducible run must produce:
 8. An MLflow run containing the preceding metadata and approved artifacts.
 9. For promoted models, a signed-off model manifest tied to the run.
 
-Real-data versions of items 2–8 remain private unless the PI approves specific aggregate fields.
+Real-data versions of items 2–8 remain private unless the dataset's recorded terms and the owner permit publishing specific aggregate fields (compliance register).
 
 ## 11. Test and verification strategy
 
@@ -366,7 +394,7 @@ Real-data versions of items 2–8 remain private unless the PI approves specific
 
 ## 12. Delivery roadmap
 
-Effort estimates are focused working time, not elapsed approval time. The synthetic track may proceed while Phase 0 institutional approvals are pending, except where a phase explicitly depends on the restored repository or account decision.
+Effort estimates are focused working time, not elapsed approval time. The synthetic track requires no external authorization; external-data work follows the compliance gate ([`docs/approvals.md`](approvals.md)), except where a phase explicitly depends on the restored repository or account decision.
 
 ### Phase R — Restore and reconcile the repository — completed
 
@@ -388,32 +416,31 @@ Exit gate:
 
 Rollback: No destructive changes; reconciliation occurs on a new branch.
 
-### Phase 0 — Authorization and scope freeze
+### Phase 0 — Authorization and scope freeze — RETIRED 2026-11-15
 
-**Estimated effort:** Calendar-bound, commonly 1–4 weeks  
-**Dependencies:** Phase R for exact scope; may run alongside technical work on synthetic data
+**Status:** Retired. The institutional authorization phase no longer
+applies: this is an independent personal project, restricted former-lab
+data is prohibited outright, and no institutional approvals are awaited
+(former items recorded `NOT_APPLICABLE` in `docs/approvals.md`).
 
-Deliverables:
+Replacement: the personal public-data compliance gate — the per-dataset
+register in [`docs/data_access.md`](data_access.md) (dataset name,
+canonical URL, version/accession, access date, license or terms,
+permitted uses, attribution requirements, redistribution/training
+restrictions, verification status) with the gate checklist in
+[`docs/approvals.md`](approvals.md).
 
-- PI scope decision.
-- IRB/human-subjects determination.
-- DUA answers for analysis, cloud processing, copies, training, and derived artifacts.
-- Institutional account/security decision.
-- Public aggregate-metric decision.
-- Redacted approval checklist.
-
-Exit gate:
-
-- Written answers exist for all institutional-track gates.
-- Allowed data locations, artifacts, and publication fields are unambiguous.
-
-Rollback: If approval is denied or limited, park the institutional track and continue only with the synthetic track.
+Re-trigger: if restricted data, human-subject interaction,
+institutional resources, or institutional affiliation are ever
+introduced, the corresponding external review requirements reactivate
+([`docs/approvals.md`](approvals.md) item 5) and external-data work
+closes until they are recorded.
 
 ### Phase 1 — Scientific and reproducibility hardening
 
-**Status:** Synthetic-path implementation completed 2026-11-13 (uncommitted working tree; commits pending owner approval). The kinematic evaluation script exists but has NOT been executed; real-data use remains approval-gated. MLflow lineage verified only against a local synthetic store.  
+**Status:** Synthetic-path implementation completed 2026-11-13 (uncommitted working tree; commits pending owner approval). The kinematic evaluation script exists but has NOT been executed; external-data use remains compliance-gated. MLflow lineage verified only against a local synthetic store.  
 **Estimated effort:** 2–4 days  
-**Dependencies:** Phase R; approvals required before new real-data analysis
+**Dependencies:** Phase R; compliance-verified public dataset required before any external-data analysis
 
 Deliverables:
 
@@ -422,7 +449,7 @@ Deliverables:
 - Optional fixed-parameter XGBoost parity exercise, isolated in the optional analysis dependency group as approved in **DD-003**.
 - Local MLflow tracking and experiment/artifact contract.
 - Updated methodology and historical correction.
-- Kinematic evaluation script; execution remains approval-gated.
+- Kinematic evaluation script; execution remains compliance-gated.
 
 Exit gate:
 
@@ -431,7 +458,7 @@ Exit gate:
 - Every reported metric traces to a run, configuration, source version, and schema.
 - No outcome is tuned toward the retracted result.
 
-Rollback: Revert the phase branch. Local synthetic MLflow stores are disposable; restricted stores follow institutional retention policy.
+Rollback: Revert the phase branch. Local synthetic MLflow stores are disposable; former-lab or restricted stores must not exist anywhere in this project.
 
 ### Phase 2 — Synthetic model, API, and container
 
@@ -480,7 +507,7 @@ Rollback: Disable the deployment workflow and OIDC trust; retain CI-only checks.
 
 ### Phase 4 — Public synthetic AWS environment
 
-**Status:** Terraform and operations documentation complete 2026-11-14 (uncommitted working tree) per **ADR-004** (CloudFront default-domain ingress, ephemeral; region us-east-2 — the new-AWS-experience project Region, switched from the earlier us-west-1 choice on 2026-11-14 before first apply), **ADR-005** (single root module, `dev` environment, Phase-4 bootstrap, GitHub environment `aws-synthetic`), and strict **ADR-006**. Offline acceptance criteria verified (format/validate/lint/security checks, least-privilege policy fixture tests, no account IDs committed). NO AWS resource exists yet; the bootstrap and first apply remain owner-gated (Prompt 6).  
+**Status:** Terraform and operations documentation complete 2026-11-14 (uncommitted working tree) per **ADR-004** (CloudFront default-domain ingress, ephemeral; region us-east-2 — the new-AWS-experience project Region, switched from the earlier us-west-1 choice on 2026-11-14 before first apply), **ADR-005** (single root module, `dev` environment, Phase-4 bootstrap, GitHub environment `aws-synthetic`), and strict **ADR-006**. Offline acceptance criteria verified (format/validate/lint/security checks, least-privilege policy fixture tests, no account IDs committed). Deployment executed locally 2026-11-14/15 (this account's SCP denies OIDC providers, so the GitHub deploy path is intentionally disabled here); verified end to end, exercised through Phase 5, and **destroyed 2026-11-15** with an empty after-destroy orphan check — measured record: `docs/deployment_report.md`.  
 **Estimated effort:** 2–4 days  
 **Dependencies:** Phase 3 and decisions **DD-004** and **DD-005**
 
@@ -573,8 +600,9 @@ Scientific hardening (1) -> API/container (2) -> CI/CD (3) -> AWS synthetic (4)
                                                         -> Publication (6)
                                                         -> Optional local K8s (7)
 
-Institutional real-data execution requires both Phase 1 readiness and Phase 0 approval.
-The synthetic path does not require permission to use real data.
+External-data execution requires Phase 1 readiness plus a compliance-verified
+public dataset (docs/approvals.md). The synthetic path requires no external
+authorization.
 ```
 
 ## 14. Cost and cleanup requirements
@@ -598,7 +626,7 @@ The runbook must include an after-destroy check covering ECS, load balancers, NA
 | Risk | Likelihood/impact | Mitigation | Trigger or owner action |
 |---|---|---|---|
 | Repository changes make the verified baseline stale | Medium / Medium | Re-run the Phase R checks before implementation and record the new commit | Refresh the baseline when implementation begins |
-| PI, IRB, DUA, or security review blocks real-data work | Medium / High | Synthetic track remains independent | Park institutional track |
+| Restricted or former-lab data tempts the project back | Low (prohibited) / Critical | Out of scope outright; external-data work only with a compliance-verified public dataset | Refuse; record the dataset as REJECTED in the register |
 | Kinematic evaluation is null or negative | High / Medium | Show baselines and `beats_baseline`; do not tune after viewing results | Retain as honest feasibility result |
 | Tiny cohort produces unstable estimates | High / High | LOSO, cluster bootstrap, permutation null, per-subject review, strong limitations | Avoid generalization claims |
 | Data or artifacts cross the trust boundary | Low / Critical | Separate accounts/stores, build exclusions, scans, least privilege, no payload logs | Stop deployment and follow incident runbook |
@@ -632,7 +660,7 @@ This planned change inventory was reconciled with the repository during Phase R.
 - `src/curve_icon_dbso/tracking.py`.
 - `src/curve_icon_dbso/bootstrap.py` or equivalent statistical module.
 - `scripts/train_synthetic_model.py`.
-- `scripts/evaluate_real_kinematics.py`, execution-gated by approval.
+- `scripts/evaluate_real_kinematics.py`, execution-gated by the compliance register.
 - `infra/` Terraform configuration for providers, variables, networking, ECR, S3, ECS, ALB, IAM/OIDC, observability, budgets, and outputs.
 - `.github/workflows/deploy.yml`.
 - API, security, bootstrap, permutation, manifest, artifact, and payload-generator tests.
@@ -684,7 +712,7 @@ No item in this section is final until the owner approves it. Recommended defaul
 - **Recommended:** Promote the best fixed candidate only if it beats both naive baselines under the prespecified primary metric; otherwise promote a clearly labeled demonstration model with `beats_baseline: false` and no performance claim.
 - **Alternative:** Always serve one predetermined model family so deployment behavior is independent of the observed comparison.
 - **Decision effect:** Determines the artifact selection rule and confirmatory integrity.
-- **Status:** Owner and PI decision required before any real model promotion.
+- **Status:** ~~Owner and PI decision required before any real model promotion.~~ Amended 2026-11-15: owner decision; any non-synthetic promotion additionally requires a compliance-verified public dataset (the former PI clause is retired with the institutional gate).
 
 ## 18. Definition of done
 
@@ -697,7 +725,7 @@ The modernization is complete when:
 5. GitHub Actions deploys an immutable synthetic release to Terraform-managed ECS using OIDC and human approval.
 6. Monitoring, alarms, rollback, load criteria, drift demonstration, scale-to-zero, and full teardown have been exercised.
 7. Public documentation contains no restricted material and makes no unsupported scientific or clinical claim.
-8. Institutional-track work remains disabled unless all written approvals are complete.
+8. External-data work remains closed unless a public dataset passes the compliance register (`docs/approvals.md`).
 9. Every published portfolio or resume statement is backed by a completed phase and archived evidence.
 
 ## 19. Phase-linked portfolio claims
@@ -714,9 +742,9 @@ Never publish the retracted R² = 0.713 as an achievement, call it accuracy, cla
 ## 20. Immediate next actions
 
 1. Preserve and commit the five existing working-tree changes only when the owner is ready; do not mix them with MLOps implementation commits.
-2. Start the Phase 0 approval checklist with the PI.
+2. ~~Start the Phase 0 approval checklist with the PI.~~ — retired 2026-11-15; replaced by the personal public-data compliance gate (`docs/approvals.md`, register in `docs/data_access.md`).
 3. Convert Phase 1 requirements into tracked issues and architecture decision records. *(ADR-001–006 recorded 2026-11-13; Phase 1 synthetic-path implementation complete.)*
-4. ~~Resolve DD-004 and DD-005 before Phase 4; resolve DD-006 with the PI before any real-model promotion.~~ — DD-004/005/006 approved by the owner 2026-11-14 (ADR-004…006); the PI gate for real-model promotion is unchanged.
+4. ~~Resolve DD-004 and DD-005 before Phase 4; resolve DD-006 with the PI before any real-model promotion.~~ — DD-004/005/006 approved by the owner 2026-11-14 (ADR-004…006). *(Amended 2026-11-15: the PI clause is retired with the institutional gate; non-synthetic promotion requires a compliance-verified public dataset — see the governance amendment and ADR-006.)*
 5. ~~Correct the README test count~~ — done 2026-11-13 (hard-coded counts removed; the count is printed by pytest).
-6. Do not execute new real-data analysis until the applicable approval gate is satisfied.
-7. Resolve the kinematic prominence-floor binning ambiguity (see methodology) with the PI before any real-data QC decision.
+6. Do not execute analysis on any non-synthetic dataset until it passes the compliance register (`docs/data_access.md`).
+7. Resolve the kinematic prominence-floor binning ambiguity (see methodology) — owner decision — before any external-data QC decision rests on it.

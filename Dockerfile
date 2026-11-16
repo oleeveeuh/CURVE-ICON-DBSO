@@ -53,7 +53,15 @@ RUN .venv/bin/python -m curve_icon_dbso.training --output-dir /app/artifact
 # Debian 13 (trixie) runtime: Debian 12 (bookworm) went oldstable and
 # carries a flood of 2025/2026 CVEs with no bookworm fix. The venv's
 # manylinux wheels are glibc-compatible with trixie.
+#
+# FAILURE_DEMO=1 builds the Phase 5 rollback-exercise image (owner-gated):
+# it REMOVES the trained artifact directory, so the fail-closed readiness
+# path (MOD-003) returns 503 forever and the deployment fails health
+# checks — which is exactly what the ECS deployment circuit breaker and
+# the unhealthy-target alarm are supposed to catch. Nothing else changes.
 FROM python:${PYTHON_VERSION}-slim-trixie AS runtime
+
+ARG FAILURE_DEMO=0
 
 ARG SOURCE_SHA=unknown
 LABEL org.opencontainers.image.title="curve-icon-dbso-api" \
@@ -87,6 +95,11 @@ RUN apt-get update \
     /usr/local/lib/python3.11/__pycache__ \
     /usr/local/bin/pip* \
     /var/lib/apt/lists/*
+
+# Phase 5 rollback-exercise hook (see FAILURE_DEMO above).
+RUN if [ "$FAILURE_DEMO" = "1" ]; then rm -rf /app/artifact && printf '%s\n' \
+      "deliberately failing deployment: Phase 5 rollback exercise" \
+      > /failure-demo-marker; fi
 
 USER 10001:10001
 

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-connection"
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/component: test-connection
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+  containers:
+    - name: curl
+      image: curlimages/curl:8.11.1
+      command: ["curl", "-fsS", "--max-time", "10"]
+      args:
+        - "http://{{ .Release.Name }}-api:{{ .Values.service.port }}/ready"
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+  restartPolicy: Never

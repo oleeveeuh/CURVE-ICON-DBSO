@@ -37,7 +37,7 @@ Approved parameters recorded with this decision:
 ## Alternatives considered
 
 - **Reusable modules from the outset** (network / service / artifact /
-  observability): better institutional-track reuse; rejected for now —
+  observability): better multi-environment reuse; rejected for now —
   extra indirection with exactly one real environment and no second
   consumer of the interfaces yet.
 
@@ -45,7 +45,7 @@ Approved parameters recorded with this decision:
 
 - Fastest review path: every resource of the public synthetic environment
   is visible as plain `infra/*.tf` files.
-- Institutional-track reuse (if ever approved) will either parameterize
+- A second environment (if ever needed) will either parameterize
   this root or extract modules at that point — a refactor with no
   scientific-scope impact.
 - `dev` naming makes the ephemeral, non-production status of the single

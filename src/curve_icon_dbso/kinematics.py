@@ -23,9 +23,10 @@ methodology's November 2026 status note):
   QC-OK ECoG channels, via :mod:`curve_icon_dbso.hfo`.
 
 Every function here is pure computation on arrays; verification uses
-synthetic fixtures only. The real-data entry point
-(``scripts/evaluate_real_kinematics.py``) is approval-gated and must not
-be run until the institutional approvals in ``docs/approvals.md`` exist.
+synthetic fixtures only. The external-data entry point
+(``scripts/evaluate_real_kinematics.py``) is compliance-gated and must
+not be run until a dataset is recorded ``VERIFIED`` in the
+``docs/data_access.md`` compliance register.
 """
 
 from __future__ import annotations

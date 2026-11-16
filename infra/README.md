@@ -1,4 +1,4 @@
-# Public synthetic track — Terraform (Phase 4)
+# Public synthetic track — Terraform (Phases 4–5)
 
 Single small root module per **ADR-005** (DD-005, approved 2026-11-14).
 Nothing here runs automatically; applies require the human approval gate
@@ -21,7 +21,9 @@ created by reading or writing these files.**
 | `s3.tf` | Versioned private artifact bucket: public access blocked, AES256, TLS-only policy, lifecycle (INF-004) |
 | `iam.tf` | ECS execution/task roles; GitHub OIDC provider + plan/apply/push roles trusted for the exact repo + ref/environment (CIC-003, INF-003) |
 | `policies/*.json` | The policy documents (template placeholders filled by `iam.tf`) — parsed and scope-asserted offline by `tests/test_iam_policy_scope.py` |
-| `observability.tf` | CloudWatch log group, 14-day retention (API-009; alarms/dashboard come with Phase 5) |
+| `observability.tf` | CloudWatch log group, 14-day retention (API-009) |
+| `alarms.tf` | OBS-002 alarms (5xx ratio, p95, unhealthy targets, restarts) → SNS email topic + the 2 low-cardinality log metric filters |
+| `dashboard.tf` | OBS-001 CloudWatch dashboard incl. model-version visibility |
 | `budgets.tf` | Monthly cost budget with $5/$20 notifications (INF-008) |
 | `outputs.tf` | Bucket/repo/cluster/service/domain names + GitHub role ARNs |
 | `environments/dev.tfvars` | The single environment's values (no secrets; region/env/budget/email) |
