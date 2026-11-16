@@ -25,8 +25,8 @@ that path is explicitly outside the byte-determinism promise.
 
 This module trains on synthetic data ONLY by construction (the cohort
 comes from :mod:`curve_icon_dbso.synthetic`). Any non-synthetic training
-requires a compliance-verified public dataset (register in
-docs/data_access.md; gate in docs/approvals.md).
+is the owner's responsibility to conduct lawfully — see the non-blocking
+guidance in docs/data_access.md and docs/approvals.md.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ PROHIBITED_USES: list[str] = [
     "clinical decision support, diagnosis, or treatment selection",
     "patient care, counseling, cohort selection, or DBS programming",
     "any use with restricted, private, identifiable, or former-lab data "
-    "(non-synthetic data requires a compliance-verified public dataset; "
+    "(non-synthetic data is the owner's responsibility to use lawfully; "
     "see docs/data_access.md)",
     "biomarker discovery or clinical interpretation of predictions",
     "performance or generalization claims beyond this synthetic "

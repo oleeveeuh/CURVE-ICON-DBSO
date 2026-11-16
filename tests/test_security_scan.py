@@ -1,8 +1,11 @@
-"""Negative fixtures for the secret/identifier scanner (CIC-007, plan §11.2).
+"""Negative fixtures for the scanner (CIC-007, plan §11.2; amended 2026-11-16).
 
 Plants controlled fake findings in temporary directories and asserts the
-scanner catches them — and that it never echoes the secret content into its
-own output. Also asserts the tracked repository tree itself scans clean.
+severity behavior — credential findings (secrets, credential file types)
+are BLOCKING (exit 1); privacy notices (subject identifiers, data file
+types) are NON-BLOCKING (exit 0 with a WARN line) per docs/approvals.md.
+Also asserts the scanner never echoes the secret content into its own
+output, and that the tracked repository tree scans clean.
 """
 
 from __future__ import annotations
@@ -58,18 +61,33 @@ def test_planted_github_token_is_caught(tmp_path):
     assert "github-token" in result.stdout
 
 
-def test_planted_subject_identifier_is_caught(tmp_path):
+def test_planted_subject_identifier_is_a_non_blocking_notice(tmp_path):
+    """A subject-code match prints a WARN line but never fails the scan —
+    privacy notices never block repository work (docs/approvals.md)."""
     tree = _tree(tmp_path, ("outputs/results.csv", "code,DBS_bG01,mae\n1,0.5,0.2\n"))
     result = _run(tree)
-    assert result.returncode == 1
+    assert result.returncode == 0, (
+        f"subject identifiers must be non-blocking: {result.stdout}"
+    )
+    assert "WARN" in result.stdout
     assert "subject-identifier" in result.stdout
 
 
-def test_prohibited_file_type_is_caught(tmp_path):
+def test_planted_data_file_type_is_a_non_blocking_notice(tmp_path):
+    """A data file type (privacy guidance) warns without failing."""
     tree = _tree(tmp_path, ("data/cohort.mat", "MATLAB binary junk"))
     result = _run(tree)
+    assert result.returncode == 0, f"data file types must be non-blocking: {result.stdout}"
+    assert "WARN" in result.stdout
+    assert "data-file-type" in result.stdout
+
+
+def test_credential_file_type_is_blocking(tmp_path):
+    """A credential file type (security) still fails the scan."""
+    tree = _tree(tmp_path, ("certs/server.pem", "not really a key, but the type counts"))
+    result = _run(tree)
     assert result.returncode == 1
-    assert "prohibited-file-type" in result.stdout
+    assert "credential-file-type" in result.stdout
 
 
 def test_legacy_identifiers_are_exempt_but_secrets_are_not(tmp_path):
@@ -106,9 +124,9 @@ def test_clean_tree_passes(tmp_path):
 
 
 def test_this_repository_tree_scans_clean():
-    """The real CI gate: the tracked tree must be free of secrets, subject
-    identifiers outside the sanctioned legacy archive, and prohibited file
-    types."""
+    """The real CI gate: the tracked tree must produce no BLOCKING findings
+    (no secrets, no credential file types). Privacy notices are printed but
+    do not fail."""
     result = subprocess.run(
         [sys.executable, str(SCANNER)],
         cwd=REPO_ROOT,

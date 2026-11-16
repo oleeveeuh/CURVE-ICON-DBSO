@@ -186,7 +186,8 @@ def test_deploy_gates_apply_behind_the_protected_environment():
     deploy_job = deploy["jobs"]["deploy"]
     assert deploy_job.get("environment") == "aws-synthetic", (
         "the apply job must run inside the protected aws-synthetic environment "
-        "(CIC-004 human approval)"
+        "(deployment cost safeguard; the IAM apply role's trust pins this "
+        "environment on standard accounts)"
     )
     steps_text = "\n".join(
         s.get("run", "") for s in deploy_job.get("steps", [])

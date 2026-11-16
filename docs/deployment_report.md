@@ -87,7 +87,7 @@ cohort, and nothing here supports a clinical or model-decay claim. The
 report contains aggregate PSI floats and bucket shares only — never raw
 feature values, never per-row data, never sparse buckets.
 
-## 5. Failure and rollback exercise (owner-gated) — 2026-11-15
+## 5. Failure and rollback exercise (owner-run) — 2026-11-15
 
 Mechanism: image built with `--build-arg FAILURE_DEMO=1` removes the
 trained artifact, so the fail-closed readiness path (MOD-003) returns

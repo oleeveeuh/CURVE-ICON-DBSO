@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
-"""Secret and prohibited-content scanner for the public track (CIC-007).
+"""Secret scanner with non-blocking privacy notices (CIC-007, amended).
 
 Scans GIT-TRACKED files for:
 
 1. credential patterns (AWS keys, private keys, GitHub/Slack tokens,
-   generic credential assignments);
-2. subject identifiers matching ``DBS_bG<digits>`` (plan §5.3) — with
-   ``legacy/`` excluded, the one sanctioned archive that keeps historical
-   subject codes as evidence (docs/data_access.md);
-3. private/prohibited file TYPES that must never be committed
-   (raw data, model pickles, credentials, Terraform state).
+   generic credential assignments) and credential file types
+   (.pem/.key/.p12/.pfx/.crt/.tfstate) — **blocking**: a leaked
+   credential is a security vulnerability, so these fail the scan;
+2. subject identifiers matching ``DBS_bG<digits>`` (plan §5.3) and
+   data/model/state file types (raw data, model pickles, databases) —
+   **non-blocking notices** per the repository's standing policy
+   (docs/approvals.md): repository work is never prevented by a
+   privacy check, so these print WARN lines and never fail the scan.
 
 Design constraints:
 
 * stdlib only (no third-party dependency in the trust-critical path);
 * findings print file:line + pattern NAME only — never the matched
   content, so the scanner itself cannot leak a secret into logs;
-* exit code 1 when anything is found, 0 when clean;
+* exit code 1 only for blocking (credential) findings, 0 otherwise;
 * ``--paths`` accepts explicit files/directories for fixture tests;
   the default scans ``git ls-files`` (exactly what CI would commit).
 
 This script doubles as the negative-test fixture target:
 tests/test_security_scan.py plants fake secrets/identifiers in temporary
-directories and asserts they are caught.
+directories and asserts the severity behavior.
 """
 
 from __future__ import annotations
@@ -58,9 +60,10 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
 ]
 
-# Subject identifiers (plan §5.3 prohibited crossings). The governance docs
-# and this scanner both use the digit-anchored form so the literal "DBS_bG*"
-# pattern descriptions in documentation do not self-match.
+# Subject identifiers (plan §5.3). NOTICE-ONLY per docs/approvals.md: a
+# privacy check never blocks repository work, so a match prints a WARN
+# line instead of failing. The digit-anchored form keeps the literal
+# "DBS_bG*" pattern descriptions in documentation from self-matching.
 SUBJECT_IDENTIFIER_PATTERN = re.compile(r"DBS_bG\d")
 
 # The sanctioned exception: the archived legacy scripts keep historical
@@ -75,8 +78,21 @@ IDENTIFIER_EXEMPT_PREFIXES = ("legacy/",)
 # checked, and the planted strings are test data, never real credentials.
 CONTENT_EXEMPT_FILES = ("tests/test_security_scan.py",)
 
-# File types that must never be committed (CON-002, REP-006, INF-006).
-PROHIBITED_SUFFIXES = (
+# Credential file types — BLOCKING (security: files of these types are
+# credentials or infrastructure state that routinely embeds credentials).
+CREDENTIAL_SUFFIXES = (
+    ".tfstate",
+    ".tfstate.backup",
+    ".pem",
+    ".key",
+    ".p12",
+    ".pfx",
+    ".crt",
+)
+
+# Data/model/database file types — NOTICE-ONLY (privacy guidance; see
+# docs/approvals.md "Owner responsibilities (non-blocking guidance)").
+DATA_SUFFIXES = (
     ".csv",
     ".mat",
     ".edf",
@@ -89,13 +105,6 @@ PROHIBITED_SUFFIXES = (
     ".sqlite",
     ".sqlite3",
     ".db",
-    ".tfstate",
-    ".tfstate.backup",
-    ".pem",
-    ".key",
-    ".p12",
-    ".pfx",
-    ".crt",
 )
 
 MAX_FILE_BYTES = 5_000_000  # skip absurd files; lock files are well under this
@@ -145,24 +154,33 @@ def is_identifier_exempt(path: Path) -> bool:
     return any(parent.name == "legacy" for parent in path.parents)
 
 
-def scan_files(files: list[Path]) -> list[str]:
-    """Return human-readable finding lines (file:line: name — no content)."""
-    findings: list[str] = []
+def scan_files(files: list[Path]) -> tuple[list[str], list[str]]:
+    """Return (blocking, notice) human-readable finding lines.
+
+    Lines carry file:line (content patterns) or file (types) plus the
+    finding NAME — never the matched content.
+    """
+    blocking: list[str] = []
+    notices: list[str] = []
     for path in files:
         rel = rel_display(path)
         if path.is_dir() or not path.is_file():
             continue
-        if path.suffix.lower() in PROHIBITED_SUFFIXES:
-            findings.append(f"{rel}: prohibited-file-type ({path.suffix.lower()})")
-            # No `continue`: a private key inside a .pem is still a secret
-            # worth reporting by pattern; keep scanning the content below.
+        suffix = path.suffix.lower()
+        if suffix in CREDENTIAL_SUFFIXES:
+            blocking.append(f"{rel}: credential-file-type ({suffix})")
+        elif suffix in DATA_SUFFIXES:
+            notices.append(f"{rel}: data-file-type notice ({suffix}) — "
+                           "non-blocking reminder (docs/approvals.md)")
+        # No `continue` after the type checks: a private key inside a .pem
+        # is still worth reporting by pattern; keep scanning the content.
         try:
             if path.stat().st_size > MAX_FILE_BYTES:
-                findings.append(f"{rel}: file-too-large-to-scan ({path.stat().st_size} bytes)")
+                blocking.append(f"{rel}: file-too-large-to-scan ({path.stat().st_size} bytes)")
                 continue
             text = path.read_text(errors="replace")
         except OSError as exc:
-            findings.append(f"{rel}: unreadable-file ({exc.__class__.__name__})")
+            blocking.append(f"{rel}: unreadable-file ({exc.__class__.__name__})")
             continue
 
         exempt_ids = is_identifier_exempt(path)
@@ -172,10 +190,12 @@ def scan_files(files: list[Path]) -> list[str]:
                 continue  # the negative-test fixture file: patterns are its content
             for name, pattern in SECRET_PATTERNS:
                 if pattern.search(line):
-                    findings.append(f"{rel}:{lineno}: secret-pattern ({name})")
+                    blocking.append(f"{rel}:{lineno}: secret-pattern ({name})")
             if not exempt_ids and SUBJECT_IDENTIFIER_PATTERN.search(line):
-                findings.append(f"{rel}:{lineno}: subject-identifier (DBS_bG<digits>)")
-    return findings
+                notices.append(f"{rel}:{lineno}: subject-identifier notice "
+                               "(DBS_bG<digits>) — non-blocking reminder "
+                               "(docs/approvals.md)")
+    return blocking, notices
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -193,18 +213,20 @@ def main(argv: list[str] | None = None) -> int:
         print("security-scan: no files to scan", file=sys.stderr)
         return 2
 
-    findings = scan_files(files)
-    if findings:
-        print(f"security-scan: FAIL — {len(findings)} finding(s)")
-        for line in findings:
+    blocking, notices = scan_files(files)
+    for line in notices:
+        print(f"security-scan: WARN — {line}")
+    if blocking:
+        print(f"security-scan: FAIL — {len(blocking)} blocking finding(s)")
+        for line in blocking:
             print(f"  {line}")
         print(
             "security-scan: matched content is never printed; remove the item "
             "from the public track and follow docs/data_access.md incident response."
         )
         return 1
-    print(f"security-scan: OK ({len(files)} files scanned; no secrets, no subject "
-          "identifiers, no prohibited file types)")
+    print(f"security-scan: OK ({len(files)} files scanned; no secrets or "
+          f"credential file types; {len(notices)} non-blocking privacy notice(s))")
     return 0
 
 

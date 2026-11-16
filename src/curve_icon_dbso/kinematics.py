@@ -24,13 +24,14 @@ methodology's November 2026 status note):
 
 Every function here is pure computation on arrays; verification uses
 synthetic fixtures only. The external-data entry point
-(``scripts/evaluate_real_kinematics.py``) is compliance-gated and must
-not be run until a dataset is recorded ``VERIFIED`` in the
-``docs/data_access.md`` compliance register.
+(``scripts/evaluate_real_kinematics.py``) prints a non-blocking
+data-use reminder (docs/data_access.md) — nothing is gated on any
+register or approval status.
 """
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -262,27 +263,33 @@ def build_kinematic_model_matrix(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Ser
 def resolve_output_dir(
     output_dir: str | Path | None,
     repo_root: Path | None,
-    allow_in_repo: bool = False,
+    allow_in_repo: bool = True,
 ) -> Path:
-    """Enforce the real-data output-location rule (docs/data_access.md).
+    """Resolve the output directory and remind about the location rule.
 
-    Real-data scripts must default outputs **outside** the repository:
-    ``output_dir`` is required (no implicit default), and a path inside the
-    repository checkout is rejected unless ``allow_in_repo=True`` is passed
-    as the deliberate override.
+    Real-data scripts default outputs **outside** the repository
+    (docs/data_access.md): ``output_dir`` is required (no implicit
+    default). A path inside the repository checkout produces a
+    ``UserWarning`` — a reminder, never an error; the run proceeds.
+    ``allow_in_repo`` is accepted for call compatibility and no longer
+    changes behavior.
     """
     if output_dir is None:
         raise DataValidationError(
-            "An explicit output directory is required for real-data runs, and it "
-            "must default outside the repository checkout (docs/data_access.md)."
+            "An explicit output directory is required for real-data runs; the "
+            "recommended location is outside the repository checkout "
+            "(docs/data_access.md)."
         )
     path = Path(output_dir).expanduser().resolve()
-    if repo_root is not None and not allow_in_repo:
+    if repo_root is not None:
         root = Path(repo_root).resolve()
         if path == root or root in path.parents:
-            raise DataValidationError(
-                f"Refusing to write real-data outputs inside the repository "
-                f"({path}). Choose a directory outside the checkout, or pass the "
-                "explicit in-repository override if you truly intend this."
+            warnings.warn(
+                f"Output path {path} is inside the repository checkout. "
+                "Real-derived outputs are recommended to live outside the "
+                "checkout (docs/data_access.md). This is a reminder — the run "
+                "continues.",
+                UserWarning,
+                stacklevel=2,
             )
     return path

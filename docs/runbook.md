@@ -18,7 +18,7 @@ carries real data, real artifacts, or real-derived material.
 |---|---|
 | ✅ SAFE | read-only, or touches nothing billable; run freely |
 | ⚠️ MUTATING | creates or changes billable AWS resources |
-| 🛑 APPROVAL-GATED | requires an explicit owner decision recorded in the conversation (Prompt 6) before running |
+| 🛑 OWNER-REVIEW | billable or destructive — review the plan/impact before running; nothing is gated on a recorded approval, the marker is a cost/impact caution |
 | ❌ DESTRUCTIVE | removes resources or state; double-check before running |
 
 **Rules that always apply**
@@ -102,7 +102,9 @@ this step unless the bootstrap stack is rebuilt.)
 
 1. **Environments → create `aws-synthetic`** (exact name — the IAM trust
    policy pins it):
-   - Required reviewers: the owner (this IS the human-approval gate, CIC-004).
+   - Required reviewers: the owner, if you want the cost safeguard of a
+     confirmation click before billable applies (recommended; the apply
+     role's trust pins this environment name on standard accounts).
    - Deployment branches policy: `main` only.
 2. **Variables** (Settings → Secrets and variables → Actions → Variables;
    no secrets — OIDC only):
@@ -132,10 +134,10 @@ terraform plan \
   -var-file=environments/dev.tfvars                        # ✅ SAFE (read-only preview)
 ```
 
-🛑 **APPROVAL-GATED — the first apply creates every billable resource
+🛑 **OWNER-REVIEW — the first apply creates every billable resource
 (ALB, CloudFront, ECS, ECR, S3, budgets, ~$25/month if left running).**
-It requires the owner's explicit approval in the conversation (Prompt 6
-review of the plan) before running:
+Review the plan (expected resources, cost, region) before running —
+no recorded approval is required; the marker is a cost caution:
 
 ```bash
 terraform apply \
@@ -143,7 +145,7 @@ terraform apply \
   -var "container_image=$(aws ecr describe-images \
         --repository-name curve-icon-dbso-dev-api \
         --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)" || \
-terraform apply -var-file=environments/dev.tfvars           # ⚠️ MUTATING, 🛑 APPROVAL-GATED
+terraform apply -var-file=environments/dev.tfvars           # ⚠️ MUTATING, 🛑 OWNER-REVIEW
 ```
 
 (The first apply may simply omit `container_image` — the service starts
@@ -157,11 +159,12 @@ terraform output github_oidc_role_arns           # ✅ SAFE — set the three AW
 
 ## 4. Routine deploys (after setup)
 
-⚠️ MUTATING + 🛑 the `aws-synthetic` environment approval: push to `main`
-(app/app/infra paths) or trigger **Deploy → workflow_dispatch**. The
-workflow builds once by SHA, resolves the immutable digest, plans, waits
-for your approval in the `aws-synthetic` environment, applies, waits for
-ECS stability, and smoke-tests through CloudFront. Nothing to run by hand.
+⚠️ MUTATING + 🛑 OWNER-REVIEW (the `aws-synthetic` environment applies
+only after the owner's confirmation there — a cost safeguard): push to
+`main` (app/app/infra paths) or trigger **Deploy → workflow_dispatch**.
+The workflow builds once by SHA, resolves the immutable digest, plans,
+applies in the `aws-synthetic` environment, waits for ECS stability, and
+smoke-tests through CloudFront. Nothing to run by hand.
 
 ## 5. Verify a deployment
 
@@ -306,10 +309,10 @@ threshold. PSI > 0.2 here is a documented educational warning, NOT
 validated clinical drift monitoring and NOT a model-decay claim. The
 report contains aggregate PSI floats only — never raw feature values.
 
-## 8e. Failure and rollback exercise (Phase 5, owner-gated)
+## 8e. Failure and rollback exercise (Phase 5, owner-run)
 
-🛑 **APPROVAL-GATED**: deploying a deliberately failing image requires the
-owner's explicit go in the conversation. The mechanism: the image builds
+🛑 **OWNER-REVIEW**: this exercise deliberately deploys an unhealthy
+image — review the impact before running it. The mechanism: the image builds
 with `--build-arg FAILURE_DEMO=1` (Dockerfile), which removes the trained
 artifact directory — the fail-closed readiness path (MOD-003) then returns
 503 forever, and the deployment fails ALB health checks. Expected chain:
@@ -326,7 +329,7 @@ docker tag curve-icon-dbso-api:sha-$SHA12-failure-demo \
 docker push ...:sha-$SHA12-failure-demo        # ⚠️ MUTATING (ECR)
 DIGEST=$(aws ecr describe-images --repository-name curve-icon-dbso-dev-api \
   --image-ids imageTag=sha-$SHA12-failure-demo --query 'imageDetails[0].imageDigest' --output text)
-# 🛑 owner-approved only:
+# 🛑 after your own review of the impact:
 terraform apply -var-file=environments/dev.tfvars -auto-approve \
   -var "container_image=<repo-url>@$DIGEST" -var "desired_count=1"
 # then: watch the alarm fire, confirm the circuit breaker rollback, and
@@ -338,7 +341,7 @@ terraform apply -var-file=environments/dev.tfvars -auto-approve \
 
 ## 9. Destroy the environment
 
-🛑 APPROVAL-GATED (Prompt 6/7 owner decision) + ❌ DESTRUCTIVE:
+🛑 OWNER-REVIEW + ❌ DESTRUCTIVE:
 
 ```bash
 cd infra
@@ -476,9 +479,9 @@ unhealthy or behaving unexpectedly in the cloud track.
 
 After any incident: record what happened, what crossed the boundary
 (if anything), and the remediation, in the conversation log and — for
-governance-relevant events — in [approvals.md](approvals.md) as redacted
-status only; verification evidence lives in the compliance register
-([data_access.md](data_access.md)) and outside the repository.
+documentation-relevant events — as an update to
+[data_access.md](data_access.md); incident evidence itself stays
+outside the repository.
 
 ## Requirement map
 

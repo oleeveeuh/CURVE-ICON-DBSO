@@ -25,4 +25,4 @@ much historical context is visible.
 Reassess only if the publication scan finds restricted history that cannot be
 safely retained. This decision covers repository layout only; it does not
 authorize release of third-party data by itself (see `docs/approvals.md`
-for the compliance gate).
+for the non-blocking owner-responsibility notices).

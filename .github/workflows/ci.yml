@@ -1,11 +1,12 @@
 name: CI
 
 # CIC-001/CIC-002: every pull request runs formatting/linting, the offline
-# test suite, coverage, secret/identifier scanning, a real container build
-# with SBOM + vulnerability gate + image-privacy checks, and Terraform
-# validation — all without private data, real artifacts, or AWS keys.
-# Terraform plan runs on same-repo pull requests where OIDC credentials are
-# available (CIC-004); applies NEVER run in this workflow.
+# test suite, coverage, security scanning (credential findings block; privacy
+# notices are non-blocking), a real container build with SBOM + vulnerability
+# gate + image-privacy checks, and Terraform validation — all without private
+# data, real artifacts, or AWS keys. Terraform plan runs on same-repo pull
+# requests where OIDC credentials are available (CIC-004); applies NEVER run
+# in this workflow.
 
 on:
   push:
@@ -68,7 +69,7 @@ jobs:
         uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
         with:
           enable-cache: true
-      - name: Secret + subject-identifier + prohibited-file-type scan (CIC-007)
+      - name: Security scan — secrets block, privacy notices warn (CIC-007)
         run: uv run python scripts/security_scan.py
 
   # ------------------------------------------------------------ container ---

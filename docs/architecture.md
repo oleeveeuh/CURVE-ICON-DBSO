@@ -13,8 +13,8 @@ Current as of Phase 5 (2026-11-15). Complements: [methodology.md](methodology.md
 ## 1. Local research flow (offline, no data required)
 
 The corrected evaluation loop is fully runnable on the deterministic
-synthetic cohort; the external-data path is gated behind the compliance
-register and never runs in this repository.
+synthetic cohort; the external-data script exists but has not been run
+against real data (data guidance is non-blocking — docs/approvals.md).
 
 ```mermaid
 flowchart LR
@@ -31,8 +31,8 @@ flowchart LR
         BOOT --> REP["reporting / figures"]
         PERM --> REP
     end
-    subgraph real["External-data track (CLOSED)"]
-        REAL["compliance-verified public data only<br/>local paths only<br/>restricted / former-lab data prohibited"] -.->|"gated by the docs/data_access.md<br/>compliance register — no VERIFIED dataset"| GATE["evaluate_real_kinematics.py<br/>refuses without<br/>--acknowledge-data-use"]
+    subgraph real["External-data track (not in use)"]
+        REAL["public data only<br/>local paths only<br/>restricted / former-lab data out of scope"] -.->|"non-blocking data-use reminder<br/>(docs/data_access.md guidance)"| GATE["evaluate_real_kinematics.py<br/>always runs; optional<br/>--acknowledge-data-use provenance note"]
     end
     real -.->|"never crosses"| synthetic
 ```
@@ -85,8 +85,8 @@ synthetic-only by policy.
 flowchart TB
     PR["pull request"] --> CI["ci.yml gates:<br/>locked install · ruff · pytest+coverage<br/>secret/identifier scan · container build<br/>trivy SBOM + exceptions-aware vuln gate<br/>image-privacy check<br/>terraform fmt/validate/lint/trivy-config<br/>read-only plan on same-repo PRs"]
     MAIN["push to main / manual dispatch"] --> DEP["deploy.yml:<br/>build once by git SHA → ECR<br/>resolve immutable digest<br/>terraform plan"]
-    DEP --> APPROVE{"protected GitHub<br/>environment `aws-synthetic`<br/>human approval (CIC-004)"}
-    APPROVE -->|"standard accounts<br/>(OIDC only, no static keys)"| APPLY["terraform apply →<br/>wait ECS services-stable →<br/>CloudFront smoke test"]
+    DEP --> ENVCK{"protected GitHub<br/>environment `aws-synthetic`<br/>owner cost safeguard (CIC-004)"}
+    ENVCK -->|"standard accounts<br/>(OIDC only, no static keys)"| APPLY["terraform apply →<br/>wait ECS services-stable →<br/>CloudFront smoke test"]
     DEP -.->|"this project account:<br/>SCP denies OIDC providers<br/>(observed 2026-11-14)"| LOCAL["local apply instead<br/>(runbook §3–§4)"]
     APPLY --> BREAK["ECS deployment circuit breaker:<br/>failing deployment rolls back<br/>to the prior revision (CIC-006)"]
     LOCAL --> BREAK
@@ -135,8 +135,8 @@ flowchart TB
         SMOD["synthetic-trained model + manifest<br/>+ reference aggregates"]
         PERF["synthetic deployment performance<br/>and reliability results"]
     end
-    subgraph inst["EXTERNAL-data track (closed — compliance register: nothing VERIFIED)"]
-        RDATA["public third-party data only<br/>(restricted / former-lab data prohibited)"]
+    subgraph inst["EXTERNAL-data track (not in use — guidance: docs/data_access.md)"]
+        RDATA["public third-party data only<br/>(restricted / former-lab data out of scope)"]
         ROUT["per-subject outputs / external artifacts<br/>/ external MLflow stores"]
         RMOD["externally trained model / explainers"]
     end

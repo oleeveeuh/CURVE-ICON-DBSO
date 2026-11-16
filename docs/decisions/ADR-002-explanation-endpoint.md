@@ -25,5 +25,6 @@ overstating scientific meaning.
 
 `/explain` is not an acceptance criterion for Phase 2. Any future explanation
 work must still satisfy EXP-001…006, and explanations from non-synthetic
-data require a compliance-verified public dataset (the compliance gate in
-`docs/approvals.md`; the former item-6 PI gate was retired 2026-11-15).
+data should follow the owner-responsibility guidance (non-blocking notices
+in `docs/approvals.md`; the former item-6 PI requirement was retired
+2026-11-15 as NOT_APPLICABLE).

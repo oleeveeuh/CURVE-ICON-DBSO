@@ -1,5 +1,6 @@
 """Run contract (REP-005/SCI-012), retraction-wording guard, ignored stores,
-and the compliance-gated external-data script rehearsed on SYNTHETIC fixtures."""
+and the external-data script rehearsed on SYNTHETIC fixtures (it always
+runs; data guidance is printed as a non-blocking reminder)."""
 
 from __future__ import annotations
 
@@ -103,12 +104,11 @@ def test_mlflow_store_is_gitignored():
     assert tracked.returncode == 0, "uv.lock must be committed (REP-003)"
 
 
-# --- compliance-gated script: rehearsal on synthetic fixtures only -------------
+# --- external-data script: rehearsal on synthetic fixtures only ---------------
 
 ACK = (
-    "This dataset is compliance-verified public data, lawfully licensed "
-    "for this use, and not restricted, private, identifiable, or "
-    "former-lab data."
+    "Public kinematics dataset (placeholder example), license recorded in "
+    "docs/data_access.md."
 )
 
 
@@ -133,7 +133,7 @@ def _kinematic_feature_frame(tmp_path: Path) -> Path:
     return path
 
 
-def test_real_script_refuses_without_the_exact_acknowledgement(tmp_path, capsys):
+def _real_main():
     import sys
 
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -141,38 +141,41 @@ def test_real_script_refuses_without_the_exact_acknowledgement(tmp_path, capsys)
         from evaluate_real_kinematics import main as real_main
     finally:
         sys.path.pop(0)
+    return real_main
 
+
+def test_real_script_runs_without_acknowledgement_and_prints_reminder(tmp_path, capsys):
+    """The script ALWAYS runs: with no acknowledgement it prints the
+    non-blocking data-use reminder to stderr and exits 0."""
     features_csv = _kinematic_feature_frame(tmp_path)
-    exit_code = real_main([
+    exit_code = _real_main()([
         "--features-csv", str(features_csv),
         "--output-dir", str(tmp_path / "results"),
-        "--acknowledge-data-use", "trust me",
         "--stage", "exploratory",
     ])
-    assert exit_code == 1
-    assert "exactly" in capsys.readouterr().err
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "REMINDER" in captured.err
+    assert "never prevents a run" in captured.err
+    summary = json.loads((tmp_path / "results" / "summary.json").read_text())
+    assert "data_use_note" not in summary.get("run_provenance", {})
 
 
-def test_real_script_refuses_while_no_dataset_is_compliance_verified(tmp_path, capsys):
-    """No dataset is VERIFIED in the docs/data_access.md compliance
-    register, so the gate must block even a correct acknowledgement —
-    this is the rehearsal of the closed state."""
-    import sys
-
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    try:
-        from evaluate_real_kinematics import main as real_main
-    finally:
-        sys.path.pop(0)
+def test_real_script_records_the_optional_acknowledgement_as_provenance(tmp_path, capsys):
+    """--acknowledge-data-use is optional provenance: recorded in the run
+    summary when given, never required, never validated against a fixed
+    string."""
     features_csv = _kinematic_feature_frame(tmp_path)
-    exit_code = real_main([
+    exit_code = _real_main()([
         "--features-csv", str(features_csv),
         "--output-dir", str(tmp_path / "results"),
         "--acknowledge-data-use", ACK,
         "--stage", "exploratory",
     ])
-    assert exit_code == 1
-    assert "CLOSED" in capsys.readouterr().err
+    assert exit_code == 0
+    assert "REMINDER" not in capsys.readouterr().err
+    summary = json.loads((tmp_path / "results" / "summary.json").read_text())
+    assert summary["run_provenance"]["data_use_note"] == ACK
 
 
 def test_real_script_evaluation_half_runs_on_synthetic_fixture(tmp_path):

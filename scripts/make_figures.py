@@ -120,7 +120,7 @@ def figure_architecture(out: Path) -> None:
     row_y, box_h = 0.66, 0.22
     box(ax, 0.02, row_y, 0.26, box_h, "Inputs (either, explicitly labeled)",
         ["• deterministic SYNTHETIC cohort", "  (8 subjects · 9 recordings · seed 42)",
-         "• authorized user's local data", "  (never committed — docs/data_access.md)"])
+         "• owner-supplied local data", "  (never committed — docs/data_access.md)"])
 
     box(ax, 0.37, row_y, 0.28, box_h, "Feature construction",
         ["• UPDRS motor composites +", "  asymmetry indices (validated columns)",
@@ -148,7 +148,7 @@ def figure_architecture(out: Path) -> None:
     out_y = 0.02
     box(ax, 0.28, out_y, 0.44, 0.16, "Provenance-labeled outputs",
         ["metrics.csv · per-subject OOF · summary.json",
-         "data_provenance: synthetic | authorized-local",
+         "data_provenance: synthetic | local-copy",
          "figures: labeled real / historical / synthetic"], accent=MUTED)
 
     arrow(ax, 0.155, row_y, 0.155, row2_y + box_h2)          # inputs -> CV
@@ -214,7 +214,7 @@ def figure_cohort_flow(out: Path) -> None:
 
     ax.text(0.02, 0.40,
             "Privacy: no participant data, subject identifiers, or per-subject\n"
-            "outputs are committed. Data stays with authorized users\n"
+            "outputs are committed. Data stays with its local copy owner\n"
             "(docs/data_access.md).",
             fontsize=8.4, color=MUTED, va="top")
 

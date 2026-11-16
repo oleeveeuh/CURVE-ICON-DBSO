@@ -8,7 +8,7 @@ of service, no imaging, no per-subject outputs. The pipeline works on
 a deterministic synthetic cohort (`curve_icon_dbso.synthetic`) so the
 code can be verified without any data access.
 
-## Historical data source (retired) and the active public-data rule
+## Historical data source (retired) and the public-data rule
 
 The restricted data used in the historical pilot came from the USC
 **DABI** initiative (Data Archive for the BRAIN Initiative) and was
@@ -16,31 +16,30 @@ accessed through the Informatics and Computing in Neuroscience
 (**ICON**) Lab at the University of Southern California.
 
 That former-lab, restricted dataset is **no longer part of this
-project — it is prohibited, not pending approval**. This is an
-independent personal project with no institutional affiliation: it
-must not use private lab data, restricted datasets, institutional
-credentials, accounts, systems, funding, or unpublished lab
-materials. No DUA exists or is sought; the institutional approval
-gate was retired on 2026-11-15
-([docs/approvals.md](approvals.md), items recorded `NOT_APPLICABLE`).
+project — it is out of scope**. This is an independent personal
+project with no institutional affiliation: it does not use private lab
+data, restricted datasets, institutional credentials, accounts,
+systems, funding, or unpublished lab materials. No DUA exists or is
+sought; the institutional items are recorded `NOT_APPLICABLE`
+([docs/approvals.md](approvals.md)).
 
-Any non-synthetic data this project ever uses must be legitimately
-public and must pass the compliance register below **before** any use.
+Any non-synthetic data this project uses should be legitimately
+public. Recording its facts in the register below is recommended
+guidance — it is never a precondition, and nothing in the repository
+blocks work pending it.
 
-## Dataset compliance register
+## Dataset register (guidance, not a gate)
 
-Every third-party dataset must be recorded here — one entry per
-dataset, every field taken from the source itself — before any part of
-it may be downloaded, processed, or committed. No field may be
-guessed: until a dataset is verified, its facts stay explicit
-`[REQUIRED]` placeholders (a visible verification item, not a
-completed record). Per-dataset verification status is `OPEN` (default),
-`VERIFIED`, or `REJECTED`; the gate semantics live in
-[`docs/approvals.md`](approvals.md).
+Every third-party dataset should be recorded here — one entry per
+dataset, every field taken from the source itself. No field may be
+guessed: until the facts are looked up, they stay explicit
+`[REQUIRED]` placeholders. A complete entry is a courtesy to future
+readers and a record of the owner's due diligence; missing or
+incomplete entries never block any repository work.
 
-### Entry — (no public dataset identified yet)
+### Entry — (no public dataset recorded yet)
 
-- Dataset name: **[REQUIRED — no public dataset has been identified]**
+- Dataset name: **[REQUIRED — no public dataset has been recorded]**
 - Canonical URL: **[REQUIRED]**
 - Version / accession: **[REQUIRED if the source provides one]**
 - Access date: **[REQUIRED]**
@@ -48,15 +47,13 @@ completed record). Per-dataset verification status is `OPEN` (default),
 - Permitted uses: **[REQUIRED]**
 - Attribution requirements: **[REQUIRED]**
 - Redistribution / training restrictions: **[REQUIRED]**
-- Verification status: OPEN
 
 ## If you adapt this pipeline to a public dataset
 
-1. Verify the dataset is genuinely public and lawfully usable for this
-   purpose, and complete its register entry above **first**. A code
-   repository license — even where one exists — grants **no** rights
-   to third-party data, and nothing here permits restricted, private,
-   identifiable, or former-lab data.
+1. Record the dataset's facts in the register above (recommended).
+   A code repository license — even where one exists — grants **no**
+   rights to third-party data, and this project does not use
+   restricted, private, identifiable, or former-lab data.
 2. Store the data locally, outside this repository (the `.gitignore`
    blocks common data file types, but do not rely on that alone).
 3. Run the extraction step against your local copy, for example:
@@ -83,7 +80,7 @@ completed record). Per-dataset verification status is `OPEN` (default),
   are attached to them. The current `legacy/` scripts use a `SUBJ_CODE`
   column placeholder instead, and history is deliberately not rewritten:
   see [data_access.md](data_access.md) "Incident-response trigger" and
-  the Phase 6 publication scan before any public release.)
+  the publication scan before any public release.)
 - No dates, records, imaging metadata, or intermediate datasets are
   tracked.
 - `data/` and `outputs/` are gitignored; `*.csv`, `*.mat`, and raw
@@ -92,25 +89,25 @@ completed record). Per-dataset verification status is `OPEN` (default),
 ## Two-track boundary
 
 The project operates two separated tracks
-([`docs/mlops_extension_plan.md`](mlops_extension_plan.md) §5, as
-amended 2026-11-15). The same versioned code may run in both, but their
-data, models, logs, state, and accounts never mix.
+([`docs/mlops_extension_plan.md`](mlops_extension_plan.md) §5). The same
+versioned code may run in both, but their data, models, logs, state, and
+accounts never mix.
 
-| | Public synthetic track | External-data track (closed) |
+| | Public synthetic track | External-data track (not currently in use) |
 |---|---|---|
-| Data | Deterministic synthetic data only | Compliance-verified public third-party data only; restricted, private, identifiable, and former-lab data are prohibited |
-| Models | Synthetic-trained model, manifest, reference aggregates | Artifacts trained on register-verified public data, under its recorded terms |
-| Storage | This repository; personal AWS account (synthetic only) | Personal resources only, and only after the register entry is `VERIFIED`; institutional accounts are out of scope entirely |
-| Status | Active | **Closed** until a dataset passes the compliance register ([`docs/approvals.md`](approvals.md)) |
+| Data | Deterministic synthetic data only | Public third-party data; restricted, private, identifiable, and former-lab data are out of scope |
+| Models | Synthetic-trained model, manifest, reference aggregates | Artifacts trained on recorded public data, under its terms |
+| Storage | This repository; personal AWS account (synthetic only) | Personal resources only; institutional accounts are out of scope entirely |
+| Status | Active | Not in use (the guidance in this file applies if it is ever opened) |
 
-## Prohibited crossings
+## Out-of-scope material
 
-The following must never enter the public track (repository, personal
+The following never enter the public track (repository, personal
 cloud account, container image, public log, or CI artifact). For the
 former-lab dataset and any restricted material there is no approval
-path — they are prohibited outright. Aggregates from a
-compliance-verified public dataset may be published only as its
-recorded terms and attribution requirements allow:
+path — they are out of scope outright. Aggregates from a public
+dataset may be published only as its recorded terms and attribution
+requirements allow:
 
 - raw or transformed patient data;
 - subject codes, including values matching `DBS_bG*`;
@@ -127,43 +124,44 @@ recorded terms and attribution requirements allow:
 | Class | Examples | Where allowed |
 |---|---|---|
 | Public-safe | source code, tests, documentation, schemas, synthetic generator/fixtures/payloads, synthetic-trained model + manifest + reference aggregates, Dockerfile, parameterized Terraform, CI/CD definitions, performance and reliability results from the synthetic deployment only | repository, personal AWS, public CI |
-| Restricted derived | former-lab or restricted per-subject metrics tables, per-subject predictions/errors, model artifacts and explainers, experiment (MLflow) stores, reference distributions | nowhere in this project — prohibited outright |
-| Compliance records | dataset register entries and verification notes (no credentials, account IDs, or per-subject values) | this repository, per [`docs/approvals.md`](approvals.md) |
+| Restricted derived | former-lab or restricted per-subject metrics tables, per-subject predictions/errors, model artifacts and explainers, experiment (MLflow) stores, reference distributions | nowhere in this project — out of scope outright |
+| Dataset register entries | register facts and notes (no credentials, account IDs, or per-subject values) | this repository, per [`docs/approvals.md`](approvals.md) |
 
-## Approved storage locations
+## Recommended storage locations
 
 - **External (non-synthetic) data:** local, user-supplied paths outside
-  this repository checkout — and only after the register entry is
-  `VERIFIED` (`data/` is gitignored, but do not rely on gitignore alone).
+  this repository checkout (`data/` is gitignored, but do not rely on
+  gitignore alone).
 - **External per-subject outputs:** outside the repository by default;
-  in-repo paths must not be used for real-derived outputs (`outputs/` is
-  gitignored; prefer a path outside the checkout regardless).
+  in-repo paths are discouraged for real-derived outputs (`outputs/` is
+  gitignored; prefer a path outside the checkout regardless). Scripts
+  print a reminder if an in-repo output path is used.
 - **Synthetic-track cloud:** a personal AWS account may host synthetic
   artifacts only. This happened once (deployed 2026-11-14, verified and
   destroyed 2026-11-15; only the Terraform remote-state store is
   retained — see [deployment_report.md](deployment_report.md)) and is
   re-created per-deployment from the runbook.
-- **External-data cloud:** personal resources only, and only for
-  compliance-verified public data used under its recorded terms.
-  Institutional accounts are out of scope entirely; a former-lab or
-  restricted dataset is never acceptable anywhere, even temporarily.
+- **External-data cloud:** personal resources only, for lawfully usable
+  public data used under its recorded terms. Institutional accounts are
+  out of scope entirely; a former-lab or restricted dataset is never
+  acceptable anywhere, even temporarily.
 - **Terraform state:** private remote backend with locking and encryption;
   never committed.
 - **Experiment lineage:** the default local MLflow store (`mlruns/`,
   gitignored) is for **synthetic** runs only. A store that logs
   former-lab or restricted-data runs must never exist anywhere in this
-  project (MOD-006); a store for compliance-verified public data stays
-  local, gitignored, and unpublished.
+  project (MOD-006); a store for recorded public data stays local,
+  gitignored, and unpublished.
 
 ## Retention and destruction
 
 - Synthetic MLflow stores and generated synthetic artifacts are disposable and
   may be deleted freely; they are gitignored and never published.
 - Former-lab and restricted artifacts must not exist or be retained
-  anywhere in this project. Artifacts derived from a compliance-verified
-  public dataset are retained only as its recorded terms allow and are
-  deleted when no longer needed; until a dataset is verified, no
-  real-derived artifact may be retained in any cloud location.
+  anywhere in this project. Artifacts derived from a public dataset are
+  retained only as its recorded terms allow and are deleted when no
+  longer needed; while the terms are unrecorded, prefer not retaining
+  real-derived artifacts in any cloud location.
 - Cloud environments default to zero running tasks when idle and are destroyed
   between milestones; the runbook (`docs/runbook.md`, Phases 3–5) includes an
   after-destroy orphan-resource check (ECS, load balancers, NAT gateways,
@@ -173,9 +171,10 @@ recorded terms and attribution requirements allow:
 
 ## Incident-response trigger
 
-If real data, subject identifiers, real artifacts, or unapproved aggregates
-are suspected to have entered the public track (repository history, personal
-AWS account, container image, logs, CI artifacts):
+If real data, subject identifiers, real artifacts, or aggregates whose
+publication the recorded terms do not permit are suspected to have
+entered the public track (repository history, personal AWS account,
+container image, logs, CI artifacts):
 
 1. **Stop** — halt deployments and any running jobs that could extend the
    exposure; do not push or publish anything else.
@@ -189,26 +188,24 @@ AWS account, container image, logs, CI artifacts):
    rollback/destroy procedures in the runbook (`docs/runbook.md` §7/§9,
    incident summary §12).
 
-## Real-data script acknowledgement rule
+## Real-data script reminders (non-blocking)
 
-Any repository script that reads non-synthetic (external) data must:
+Any repository script that reads non-synthetic (external) data:
 
-1. **refuse to run** without an explicit acknowledgement flag
-   (`--acknowledge-data-use`, carrying the exact statement that the
-   dataset is compliance-verified public data — lawfully licensed for
-   this use — and not restricted, private, identifiable, or former-lab
-   data);
-2. **default all outputs outside the repository checkout**, rejecting
-   in-repository output paths unless deliberately overridden;
-3. **record provenance** on its outputs
-   (`public third-party data — compliance-verified local copy;
-   exploratory kinematic target; NOT DBS outcome`, per the
-   methodology's labeling convention).
+1. **prints a reminder** about the owner's data responsibilities
+   (lawful public source, license/terms, no restricted, private,
+   identifiable, or former-lab material) — purely informational; the
+   reminder never prevents a run. `scripts/evaluate_real_kinematics.py`
+   accepts an optional `--acknowledge-data-use` note that is recorded in
+   the run summary as provenance when given, and prints the reminder
+   when it is not;
+2. **defaults outputs outside the repository checkout** and prints a
+   warning (never an error) if an in-repository output path is used;
+3. **records provenance** on its outputs
+   (`public third-party data — locally supplied copy; exploratory
+   kinematic target; NOT DBS outcome`, per the methodology's labeling
+   convention).
 
-The `scripts/evaluate_real_kinematics.py` script (Phase 1;
-execution-gated by the compliance register, per
-[`docs/approvals.md`](approvals.md)) implements this rule and has never
-been run: it refuses to execute without the explicit acknowledgement,
-and it refuses while no dataset in the register is `VERIFIED`. The
-`scripts/run_hfo_extraction.py` script predates this rule and must gain
-the same guard before it is used against any external dataset.
+The `scripts/evaluate_real_kinematics.py` script (Phase 1) implements
+these reminders. The `scripts/run_hfo_extraction.py` script predates
+the convention and prints the same reminder.

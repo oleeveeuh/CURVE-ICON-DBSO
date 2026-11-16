@@ -1,19 +1,23 @@
 # CURVE-ICON-DBSO Implementation Prompt Pack
 
-> **Superseded governance note (2026-11-15):** the institutional approval
-> framework several prompts reference (PI scope, IRB, DUA, institutional
-> AWS/security) is retired — this is an independent personal project using
-> only legitimately public data and personal resources. The active gate is
-> the personal public-data compliance gate
-> ([`docs/approvals.md`](approvals.md); register in
-> [`docs/data_access.md`](data_access.md)). Prompts are retained verbatim
-> as build history; Prompt 10's precondition can no longer be met and its
-> goal is replaced by the compliance gate.
+> **Historical status note (amended 2026-11-16):** the institutional
+> approval framework several prompts reference (PI scope, IRB, DUA,
+> institutional AWS/security) was retired on 2026-11-15 — this is an
+> independent personal project — and the follow-on "personal public-data
+> compliance gate" (checklist with `OPEN`/`VERIFIED` statuses in
+> `docs/approvals.md`, enforced by script) was removed on 2026-11-16.
+> **No approval, verification, or gate precondition in any prompt below
+> is operative.** Repository work is never blocked by an approval
+> workflow; data, licensing, privacy, and attribution considerations are
+> documented as the owner's non-blocking responsibilities in
+> [`docs/approvals.md`](approvals.md) and
+> [`docs/data_access.md`](data_access.md). Prompts are retained verbatim
+> as build history.
 
 **Purpose:** Sequenced prompts for implementing the modernization defined in `docs/mlops_extension_plan.md`.  
 **Repository:** `/Users/olivialiau/CURVE-ICON-DBSO`  
 **Use:** Run one prompt at a time, in order. Review its handoff before starting the next prompt.  
-**Important:** These prompts authorize repository work only within the phase they describe. They do not authorize real-data analysis, AWS spending, public release, commits, pushes, or external messages unless the prompt explicitly says the required approval has already been supplied.
+**Important:** The approval/authorization preconditions written inside these historical prompts are no longer operative (see the status note above). Repository work — writing, implementation, experimentation, testing, analysis, and documentation changes — is never blocked pending any approval.
 
 ## How to use this pack
 
@@ -22,7 +26,7 @@
 3. Use Prompt 4 to make the remaining owner decisions before running Prompt 5.
 4. Run Prompts 5–8 sequentially.
 5. Run Prompt 9 only if the optional local Kubernetes exercise is still wanted.
-6. Prompt 10 is RETIRED (2026-11-15) — the institutional approvals it required no longer apply; its goal is replaced by the compliance gate in `docs/approvals.md` / `docs/data_access.md`.
+6. Prompt 10 is RETIRED (2026-11-15) — the institutional framework it assumed no longer applies.
 7. Finish with Prompt 11 for the release-readiness audit.
 
 Every implementation prompt requires the agent to:
@@ -33,9 +37,9 @@ Every implementation prompt requires the agent to:
 - Avoid committing or pushing unless separately requested.
 - Keep real data, subject identifiers, real artifacts, and real-data metrics out of the public track.
 - Run tests appropriate to the phase and report exact results.
-- Stop at approval gates rather than inventing decisions or approvals.
+- Record decisions transparently; never invent facts about datasets, licenses, approvals, or affiliations.
 - Update documentation when behavior or interfaces change.
-- End with a concise handoff listing changed files, verification, remaining risks, and the next permitted prompt.
+- End with a concise handoff listing changed files, verification, remaining risks, and the next suggested prompt.
 
 ---
 
@@ -65,8 +69,8 @@ Then:
 6. Propose a branch and commit sequence, but do not create branches or commits unless I approve it.
 7. Produce a short execution map that separates:
    - synthetic/public work that can begin immediately;
-   - real-data work blocked on PI/IRB/DUA/security approval;
-   - owner decisions still required;
+   - real-data work (historically described as "blocked on PI/IRB/DUA/security approval" — no longer applicable; data guidance is non-blocking, see `docs/approvals.md`);
+   - owner decisions still open;
    - optional work.
 
 Do not modify repository files unless the recorded baseline is factually stale. If it is stale, explain the exact discrepancy and ask before editing the plan.
@@ -83,6 +87,11 @@ Return:
 ---
 
 ## Prompt 1 — Governance artifacts and approval gates
+
+> *(Historical; superseded 2026-11-15/16 — the approval checklist this
+> prompt created is retired and its successor gate removed. The current
+> policy is non-blocking notices only: `docs/approvals.md`,
+> `docs/data_access.md`.)*
 
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO` and implement only the governance/documentation work allowed by Phase 0 of `docs/mlops_extension_plan.md`.
@@ -295,9 +304,13 @@ Also ask me for:
 Do not infer missing account IDs, domains, region, or approvals. End with a compact list of decisions I must approve before Prompt 5.
 ```
 
+> *(Historical; the "decisions I must approve" framing was the design-consultation flow. DD-004…006 were decided by the owner on 2026-11-14 — recorded in `docs/decisions/`. No approval precondition is operative.)*
+
 ---
 
 ## Prompt 5 — CI/CD security gates and AWS Terraform implementation
+
+> *(Historical; prerequisites below were satisfied on 2026-11-14. Note: "do not run Terraform apply or create AWS resources without a separate explicit instruction" is a spend-control instruction for the agent, not a compliance gate — repository work itself is never gated.)*
 
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement Phases 3 and 4 of `docs/mlops_extension_plan.md` for the public synthetic track only.
@@ -359,6 +372,8 @@ At the end, show the exact Terraform plan/apply command that would be used, but 
 
 ## Prompt 6 — First synthetic deployment and verification
 
+> *(Historical; the deployment it describes was executed, verified, and destroyed on 2026-11-14/15 — see `docs/deployment_report.md`. The "approval" framing was the owner's spend-confirmation flow; the environment deployment already happened.)*
+
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO` and deploy the public synthetic track defined in Phase 4 only after confirming that I explicitly approved the Terraform plan/apply and expected cost in this conversation.
 
@@ -392,6 +407,8 @@ End with deployed resource summary, endpoint exposure (redact sensitive identifi
 ---
 
 ## Prompt 7 — Monitoring, load testing, drift demonstration, and recovery
+
+> *(Historical; the observability/load/drift/rollback work it describes was completed and measured on 2026-11-15 — see `docs/deployment_report.md`. The failure-exercise "explicit approval" line was the owner's spend-confirmation flow — the exercise is complete.)*
 
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Implement and verify Phase 5 of `docs/mlops_extension_plan.md` against the public synthetic environment. Preserve the working tree and do not commit/push unless separately requested.
@@ -487,6 +504,8 @@ End with reviewer-test timing, publication-scan findings, documentation changed,
 
 ## Prompt 9 — Optional local Kubernetes and Helm exercise
 
+> *(Historical; the optional Kubernetes exercise it describes was completed on 2026-11-15 — see `docs/kubernetes.md`. Its "explicit confirmation" precondition is satisfied; no approval precondition is operative.)*
+
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This prompt is optional and requires my explicit confirmation that I still want Phase 7 after reviewing the ECS load-test evidence. If that confirmation is absent, stop with an ECS-versus-Kubernetes recommendation and make no changes.
 
@@ -513,7 +532,7 @@ End with local resource usage, test results, comparison conclusion, changed file
 
 ---
 
-## Prompt 10 — Institutional real-data track, approval-gated (RETIRED 2026-11-15 — superseded by the personal public-data compliance gate; see docs/approvals.md)
+## Prompt 10 — Institutional real-data track, approval-gated (RETIRED 2026-11-15 — the institutional framework it assumed is retired; the follow-on compliance gate was removed 2026-11-16; NOT_APPLICABLE — independent personal project, see docs/approvals.md)
 
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. This prompt must not proceed unless I provide evidence that every required Phase 0 approval is complete: PI scope, IRB determination, DUA permissions, institutional security approval, institutional AWS/account decision, publication rules, and artifact-retention rules.
@@ -544,7 +563,7 @@ End with a redacted summary suitable for the repository and a separate private h
 ```text
 Work in `/Users/olivialiau/CURVE-ICON-DBSO`. Perform a final read-only audit against every numbered requirement and definition-of-done item in `docs/mlops_extension_plan.md`. Do not fix issues until after presenting the audit unless I explicitly ask you to implement the fixes.
 
-Inspect source, tests, workflows, dependency lock, model/artifact manifests, Docker configuration, Terraform, runbooks, decision records, approval checklist, monitoring/load evidence, current cloud state if read-only access is approved, and the entire git diff/history relevant to release.
+Inspect source, tests, workflows, dependency lock, model/artifact manifests, Docker configuration, Terraform, runbooks, decision records, the data & compliance notices, monitoring/load evidence, current cloud state if read-only access is approved, and the entire git diff/history relevant to release.
 
 For every requirement ID:
 - mark PASS, PARTIAL, FAIL, BLOCKED, or NOT APPLICABLE;
@@ -562,7 +581,6 @@ Also audit:
 - rollback and destroy readiness;
 - documentation consistency;
 - optional Kubernetes status;
-- institutional-track approval state;
 - whether portfolio claims match completed evidence.
 
 Run non-destructive verification where practical. Do not run Terraform apply/destroy, publish, commit, push, or execute real-data analysis.
@@ -581,10 +599,9 @@ Return:
 
 ## Recommended stopping points
 
-- Stop after Prompt 2 if the scientific pipeline or approval model is not sound.
+- Stop after Prompt 2 if the scientific pipeline is not sound.
 - Stop after Prompt 3 if the synthetic artifact cannot be reproduced and validated locally.
-- Stop after Prompt 4 until DD-004 through DD-006 and the AWS parameters are explicitly approved.
-- Stop after Prompt 5 to review Terraform plans before authorizing any deployment.
+- Stop after Prompt 5 to review Terraform plans before authorizing any deployment (a spend-caution review, not an approval gate).
 - Stop after Prompt 7 to decide whether the environment should be scaled to zero or destroyed.
 - Treat Prompt 9 as optional even if every other prompt is completed.
-- Treat Prompt 10 as unavailable until every institutional approval is real and documented.
+- Prompt 10 is retired — the institutional track it described is NOT_APPLICABLE for this independent personal project (`docs/approvals.md`).

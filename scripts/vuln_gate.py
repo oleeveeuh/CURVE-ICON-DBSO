@@ -170,7 +170,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "vuln-gate: to ship anyway, add a time-limited entry to "
             "docs/vulnerability-exceptions.yml (id, scope, component, reason, expires, approver) "
-            "and get owner approval — or fix and redeploy."
+            "recording the owner's decision — or fix and redeploy."
         )
         return 1
 

@@ -1,8 +1,9 @@
 # Public synthetic track — Terraform (Phases 4–5)
 
 Single small root module per **ADR-005** (DD-005, approved 2026-11-14).
-Nothing here runs automatically; applies require the human approval gate
-documented in [docs/runbook.md](../docs/runbook.md). **No AWS resource is
+Nothing here runs automatically; applies go through the protected
+GitHub environment cost safeguard documented in
+[docs/runbook.md](../docs/runbook.md). **No AWS resource is
 created by reading or writing these files.**
 
 ## Layout
@@ -56,9 +57,11 @@ After the bootstrap stack ([bootstrap/README.md](bootstrap/README.md)):
 
 1. **GitHub protected environment** `aws-synthetic` (repo → Settings →
    Environments):
-   - Required reviewer: the owner. The apply/deploy job in
-     `.github/workflows/deploy.yml` runs inside this environment, so the
-     approval gate is enforced by GitHub (CIC-004).
+   - Required reviewer: the owner, if you want the confirmation click
+     before billable applies (recommended cost safeguard). The apply/deploy
+     job in `.github/workflows/deploy.yml` runs inside this environment
+     (CIC-004); the IAM apply role's trust pins this environment name on
+     standard accounts.
    - Deployment branches policy: **`main` only**.
 2. **GitHub repository variables** (Settings → Secrets and variables →
    Actions → Variables; no secrets needed — OIDC only, CIC-003):

@@ -1,45 +1,41 @@
 #!/usr/bin/env python
-"""Compliance-gated kinematic evaluation (external data — currently closed).
+"""Kinematic evaluation on external (non-synthetic) data.
 
-**Gate:** running this script against non-synthetic data requires a
-dataset recorded ``VERIFIED`` in the Dataset compliance register of
-``docs/data_access.md`` (public-source, license/terms, provenance
-boundary, and no-endorsement checks — semantics in
-``docs/approvals.md``). With no verified dataset the external-data path
-is CLOSED and this script must not see any data beyond synthetic test
-fixtures.
+**Non-blocking data guidance (docs/data_access.md):** before using any
+non-synthetic data, confirm it is lawful to use — a genuine public
+source, license/terms permitting the use, and no restricted, private,
+identifiable, or former-lab material (owner responsibilities in
+``docs/approvals.md``). This script prints that reminder when
+``--acknowledge-data-use`` is not given; the flag is optional and is
+recorded in the run summary as provenance when supplied. Nothing is
+ever refused on its basis, and repository work is never gated on any
+register or approval status.
 
-**Acknowledgement rule (docs/data_access.md):** the script refuses to run
-without ``--acknowledge-data-use`` carrying the exact compliance
-statement, and refuses in-repository output paths — real per-subject
-outputs stay outside the checkout.
+Outputs default outside the repository; an in-repository output path
+produces a warning, not an error (docs/data_access.md reminders).
 
 **What is implemented vs intentionally not:** the evaluation half
 (grouped CV with baselines, bootstrap CIs, permutation null, provenance,
 MLflow lineage) is complete and rehearsed on synthetic fixtures in the
 test suite. The raw-file extraction half (parsing a source's raw tables
-into a per-recording feature table) is deliberately NOT implemented: it
-can only be developed and verified against a concrete,
-compliance-verified dataset, and a speculative unverified loader would
-repeat the historical placeholder mistake. It will be added as the
-first compliance-gated step. This script therefore consumes a
+into a per-recording feature table) is not implemented yet: it is best
+developed against a concrete dataset. This script therefore consumes a
 per-recording feature table (one row per recording) produced by that
 future extraction step — which is why its input contract is a plain
 CSV.
 
-Example (compliance-verified public dataset required):
+Example:
 
     python scripts/evaluate_real_kinematics.py \
       --features-csv /local/outside/repo/kinematic_recordings.csv \
       --output-dir /local/outside/repo/kinematic_results \
-      --acknowledge-data-use "This dataset is compliance-verified public data, lawfully licensed for this use, and not restricted, private, identifiable, or former-lab data." \
+      --acknowledge-data-use "Public dataset X, license CC-BY-4.0, recorded in docs/data_access.md." \
       --stage exploratory
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
@@ -61,14 +57,16 @@ from curve_icon_dbso.kinematics import (
 from curve_icon_dbso.reporting import save_outputs
 
 PROVENANCE_REAL_KINEMATIC = (
-    "public third-party data — compliance-verified local copy; "
+    "public third-party data — locally supplied copy; "
     "exploratory kinematic target; NOT DBS outcome"
 )
 
-REQUIRED_ACKNOWLEDGEMENT = (
-    "This dataset is compliance-verified public data, lawfully licensed "
-    "for this use, and not restricted, private, identifiable, or "
-    "former-lab data."
+DATA_USE_REMINDER = (
+    "REMINDER (non-blocking): before using non-synthetic data, confirm it is "
+    "lawful to use for this purpose — genuinely public source, license/terms "
+    "permitting the use, and no restricted, private, identifiable, or "
+    "former-lab material. See docs/data_access.md and docs/approvals.md. "
+    "This reminder never prevents a run."
 )
 
 
@@ -77,19 +75,21 @@ def build_parser() -> argparse.ArgumentParser:
         prog="evaluate-real-kinematics",
         description=(
             "Subject-grouped evaluation of the prespecified kinematic analysis "
-            "on external (non-synthetic) data. Compliance-gated: requires a "
-            "VERIFIED entry in the docs/data_access.md dataset compliance "
-            "register before use."
+            "on external (non-synthetic) data. Prints a non-blocking data-use "
+            "reminder; never gated on any register or approval status."
         ),
     )
     parser.add_argument("--features-csv", type=Path, required=True,
                         help="Per-recording kinematic feature table (one row per "
                              "recording; KINEMATIC_FEATURES + tap_rate_mean + subject)")
     parser.add_argument("--output-dir", type=Path, required=True,
-                        help="Output directory — must be OUTSIDE this repository")
+                        help="Output directory — recommended outside this repository "
+                             "(an in-repo path prints a warning and still runs)")
     parser.add_argument(
-        "--acknowledge-data-use", required=True,
-        help=f'Must be exactly: "{REQUIRED_ACKNOWLEDGEMENT}"',
+        "--acknowledge-data-use", default=None,
+        help="Optional provenance note recorded in the run summary (e.g. the "
+             "dataset name and its recorded license/terms). Purely "
+             "informational — never required.",
     )
     parser.add_argument("--stage", choices=("exploratory", "confirmatory"),
                         required=True, help="Analysis stage label (SCI-011)")
@@ -109,17 +109,13 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     repo_root = Path(__file__).resolve().parents[1]
     try:
-        # ---- Gate 1: explicit acknowledgement (docs/data_access.md rule) ----
-        if args.acknowledge_data_use != REQUIRED_ACKNOWLEDGEMENT:
-            raise CurveIconError(
-                "External-data evaluation requires --acknowledge-data-use to be "
-                f'exactly: "{REQUIRED_ACKNOWLEDGEMENT}". This flag exists so no '
-                "run can touch non-synthetic data by accident or in a script."
-            )
-        # ---- Gate 2: outputs outside the repository ----
+        # Non-blocking data-use reminder (docs/data_access.md); nothing here
+        # ever refuses to run.
+        if args.acknowledge_data_use:
+            print(f"Data-use note (recorded in provenance): {args.acknowledge_data_use}")
+        else:
+            print(DATA_USE_REMINDER, file=sys.stderr)
         output_dir = resolve_output_dir(args.output_dir, repo_root)
-        # ---- Gate 3: dataset compliance register (checked at execution time) ----
-        _check_compliance_gate(repo_root)
 
         results = _evaluate(
             pd.read_csv(args.features_csv),
@@ -131,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
             stage=args.stage,
             output_dir=output_dir,
             use_mlflow=args.mlflow,
+            acknowledgement=args.acknowledge_data_use,
         )
         print(
             "Evaluation complete: "
@@ -142,35 +139,9 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _check_compliance_gate(repo_root: Path) -> None:
-    """Read the Dataset compliance register in docs/data_access.md and
-    refuse to run while no third-party dataset is recorded VERIFIED."""
-    doc = repo_root / "docs" / "data_access.md"
-    if not doc.exists():
-        raise CurveIconError(
-            "docs/data_access.md is missing — the compliance state is unknown, "
-            "so the external-data path stays CLOSED."
-        )
-    text = doc.read_text()
-    if "Dataset compliance register" not in text:
-        raise CurveIconError(
-            "The 'Dataset compliance register' section is missing from "
-            "docs/data_access.md — the compliance state is unknown, so the "
-            "external-data path stays CLOSED."
-        )
-    statuses = re.findall(r"^- Verification status: (\S+)", text, flags=re.MULTILINE)
-    if not any(status == "VERIFIED" for status in statuses):
-        raise CurveIconError(
-            "The external-data path is CLOSED: no dataset in the "
-            "docs/data_access.md compliance register is VERIFIED (statuses "
-            f"found: {', '.join(statuses) if statuses else 'none'}). Complete "
-            "the register for a genuinely public dataset first — see "
-            "docs/approvals.md."
-        )
-
-
 def _evaluate(frame, *, repo_root, seed, permutations, bootstrap_resamples,
-              with_xgboost, stage, output_dir, use_mlflow):
+              with_xgboost, stage, output_dir, use_mlflow,
+              acknowledgement: str | None = None):
     """The evaluation half — identical machinery to the synthetic demo."""
     from curve_icon_dbso import tracking
     from curve_icon_dbso.evaluation import describe_fold_strategy
@@ -201,6 +172,8 @@ def _evaluate(frame, *, repo_root, seed, permutations, bootstrap_resamples,
         "feature_schema_hash": tracking.kinematic_schema_hash(),
         "seed": seed,
     }
+    if acknowledgement:
+        run_provenance["data_use_note"] = acknowledgement
     paths = save_outputs(
         output_dir=output_dir,
         results=results,

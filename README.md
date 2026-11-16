@@ -15,6 +15,13 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
 > bug plus data leakage, and the only runnable results here are on **synthetic**
 > verification data. Nothing here supports clinical decision-making, counseling,
 > patient selection, or DBS programming.
+>
+> **Independent personal project.** This repository is not sponsored by,
+> conducted for, or represented as affiliated with any former lab or
+> institution (the acronyms above are historical naming only), and nothing
+> here implies endorsement by them. The owner is solely responsible for
+> ensuring that any data and resources used are lawful and appropriate —
+> see [docs/approvals.md](docs/approvals.md) for the non-blocking notices.
 
 ---
 
@@ -25,10 +32,10 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
   reliably — and that is the honest result.)*
 - **Data:** the historical pilot used restricted former-lab data (USC DABI via
   the ICON Lab) that was never distributed here and is **no longer used — it
-  is prohibited in this independent personal project**; all runnable code
+  is out of scope in this independent personal project**; all runnable code
   paths are verified on deterministic synthetic data, and any future data
-  must be legitimately public and compliance-verified
-  ([docs/data_access.md](docs/data_access.md)).
+  should be legitimately public (guidance in
+  [docs/data_access.md](docs/data_access.md)).
 - **Correction story:** the original pipeline reported R² = 0.713 (README) while its
   own figures showed −0.672. Root cause found: fold-order predictions saved against
   original-row-order subjects. This repository contains the corrected evaluation,
@@ -196,14 +203,14 @@ python scripts/make_figures.py
 ## Using an external (non-synthetic) dataset
 
 No third-party dataset is in this repository. This independent project
-uses only legitimately public data: before any use, a dataset must be
-recorded and verified in the compliance register
-([docs/data_access.md](docs/data_access.md)) — dataset name, canonical
-URL, version/accession, access date, license or terms, permitted uses,
-attribution requirements, and redistribution/training restrictions.
-Restricted, private, identifiable, or former-lab data is prohibited; no
-DABI/USC authorization path exists for this project. Once verified,
-store the data locally and:
+is designed for legitimately public data: record the dataset's facts in
+the register ([docs/data_access.md](docs/data_access.md)) — name,
+canonical URL, version/accession, access date, license or terms,
+permitted uses, attribution requirements, and redistribution/training
+restrictions. This is recommended guidance, never a blocker: nothing in
+the repository gates work on a register entry or any approval status.
+Restricted, private, identifiable, or former-lab data is out of scope
+for this project. Then store the data locally and:
 
 ```bash
 python scripts/run_hfo_extraction.py \
@@ -213,8 +220,9 @@ python scripts/run_hfo_extraction.py \
   --band-low 80 --band-high 500 --fs-override 1200
 ```
 
-Details and the compliance register: [docs/data_access.md](docs/data_access.md);
-the gate itself is [docs/approvals.md](docs/approvals.md).
+The extraction script prints a non-blocking data-use reminder. Details
+and the register: [docs/data_access.md](docs/data_access.md); the
+owner-responsibility notices are [docs/approvals.md](docs/approvals.md).
 
 ## Phase 2: synthetic inference service (research demonstration)
 
@@ -234,7 +242,7 @@ API, and the manifest (`src/curve_icon_dbso/schema.py`); hash-verified
 artifact loading that fails readiness loudly on any mismatch; batches of
 1–256 rows with order-preserving predictions; payloads, predictions, and
 feature values never logged; non-root single-worker container with a
-readiness-gated health check; **no `/explain` endpoint** by approved
+readiness-gated health check; **no `/explain` endpoint** by recorded
 decision ([docs/decisions/ADR-002-explanation-endpoint.md](docs/decisions/ADR-002-explanation-endpoint.md)).
 Measured (2026-11-15): container image 189.5 MB, containerized cold
 start 0.85 s median, local dev-machine cold start 1.15 s median
@@ -287,9 +295,10 @@ scans — plus a read-only Terraform plan on same-repository PRs
 The deployment path ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
 authenticates to AWS exclusively through GitHub OIDC (no long-lived keys):
 it builds the image once by git SHA, pushes it to ECR, resolves the
-immutable digest, and — only after approval in the protected GitHub
-environment `aws-synthetic` — applies Terraform, waits for ECS stability,
-and smoke-tests through the approved ingress. The environment itself is
+immutable digest, and — inside the protected GitHub environment
+`aws-synthetic` (the owner's cost safeguard for billable applies) —
+applies Terraform, waits for ECS stability, and smoke-tests through the
+ingress. The environment itself is
 Terraform-managed ([infra/](infra/)): CloudFront (default
 `*.cloudfront.net` TLS) → ALB (locked to CloudFront) → ECS Fargate,
 versioned private artifact bucket, budgets at $5/$20, scale-to-zero by
@@ -360,7 +369,7 @@ signals, Nyquist violations, failure-vs-zero QC, malformed-input errors,
 subject-cluster bootstrap (cluster integrity, determinism, hand-checked draws),
 the label-permutation null (block permutation, p-value convention), experiment
 lineage and provenance fingerprints, the optional XGBoost exercise, kinematic
-extraction on synthetic fixtures, governance-documentation checks, and an
+extraction on synthetic fixtures, policy-documentation checks, and an
 end-to-end determinism check. CI runs the suite on Python 3.11/3.12 from the
 committed lock file ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
@@ -380,10 +389,11 @@ tests/                 offline test suite (count printed by pytest)
 infra/                 Terraform for the public synthetic AWS track (single root
                        module + one-time remote-state bootstrap; ADR-005)
 configs/               example YAML configuration
-docs/                  data access, methodology, limitations, approvals, API guide,
-                       architecture (diagrams), deployment report (measured
-                       results), runbook (deploy/verify/rollback/scale/destroy/
-                       alarms/incident), decisions/, vulnerability exceptions
+docs/                  data access, methodology, limitations, data & compliance
+                       notices, API guide, architecture (diagrams), deployment
+                       report (measured results), runbook (deploy/verify/
+                       rollback/scale/destroy/alarms/incident), decisions/,
+                       vulnerability exceptions
 figures/               verified figures (+ archive/ of invalid historical figures)
 legacy/                archived original scripts, known-buggy, superseded — do not run
 ```
@@ -399,24 +409,25 @@ participant data out of version control.
 ## Realistic future work
 
 1. Identify a legitimately public dataset that fits the kinematic analysis,
-   verify it through the compliance register
-   ([docs/data_access.md](docs/data_access.md)), then run and publish the
-   honest result (likely null) with per-subject OOF tables.
+   record its facts in the register ([docs/data_access.md](docs/data_access.md))
+   — recommended guidance, not a gate — then run and publish the honest
+   result (likely null) with per-subject OOF tables.
 2. Grow the cohort (order 10² subjects) from public or newly consented
    sources before any model comparison; pre-specify the primary analysis.
-   (New data collection or any institutional involvement re-triggers the
-   review requirements — [docs/approvals.md](docs/approvals.md) item 5.)
+   (New data collection or any institutional involvement would be a scope
+   change worth documenting — see the notices in
+   [docs/approvals.md](docs/approvals.md).)
 3. Replace band-power summaries with validated, artifact-controlled HFO detection.
 4. Only then consider uncertainty quantification and interpretation tooling.
 
 ## Data citation and license
 
 - **Data:** the historical pilot data (USC DABI via the ICON Lab) is retired —
-  prohibited in this project, not pending approval. Any future public dataset
-  is recorded with its canonical URL, version/accession, access date,
+  out of scope in this project. Any future public dataset should be
+  recorded with its canonical URL, version/accession, access date,
   license or terms, permitted uses, attribution requirements, and
-  redistribution/training restrictions in the compliance register
-  ([docs/data_access.md](docs/data_access.md)). No dataset has been verified
+  redistribution/training restrictions in the register
+  ([docs/data_access.md](docs/data_access.md)). No dataset is recorded
   yet, so there is no dataset citation to publish.
 - **License:** deliberately absent. A license decision has not been made; until
   one is, all rights are reserved by default and the repository is not licensed

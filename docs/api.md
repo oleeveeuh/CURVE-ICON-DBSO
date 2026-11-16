@@ -4,10 +4,10 @@
 > deterministic **synthetic** data. The served model is trained on the
 > synthetic cohort generator, makes no claim about real outcomes, and is
 > never a clinical tool. There is **no** `/explain` endpoint in Phase 2
-> ([ADR-002](decisions/ADR-002-explanation-endpoint.md)). The
-> external-data path stays closed until a dataset passes the
-> compliance register ([docs/approvals.md](approvals.md),
-> [docs/data_access.md](data_access.md)).
+> ([ADR-002](decisions/ADR-002-explanation-endpoint.md)). External-data
+> work follows the non-blocking owner-responsibility guidance
+> ([docs/approvals.md](approvals.md),
+> [docs/data_access.md](data_access.md)) — nothing is gated.
 
 This document covers: locked local setup, deterministic training, the
 FastAPI service, the Docker image, request examples, the artifact
@@ -299,8 +299,8 @@ re-measure on your hardware (see §9).
 * Logs are metadata-only (§4); nothing that contains a payload value is
   ever written to stdout.
 * The public synthetic track (repository, personal AWS in Phase 4,
-  images) may contain only synthetic artifacts; the compliance register
-  in [docs/data_access.md](data_access.md) gates everything else
+  images) contains only synthetic artifacts; external-data work follows
+  the non-blocking guidance in [docs/data_access.md](data_access.md)
   ([docs/approvals.md](approvals.md)).
 
 ## 9. Measured (dev machine 2026-11-14; container 2026-11-15)

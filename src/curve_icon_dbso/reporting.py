@@ -104,9 +104,10 @@ def save_outputs(
     machine-readable ``summary.json`` carrying the full run contract
     (provenance, protocol context, baseline comparison, uncertainty).
 
-    Real-data callers must point ``output_dir`` outside the repository
-    (docs/data_access.md); this function does not enforce it — the
-    guarded entry points do (:func:`curve_icon_dbso.kinematics.resolve_output_dir`).
+    Real-data callers are recommended to point ``output_dir`` outside the
+    repository (docs/data_access.md); this function does not enforce it —
+    the CLI entry points print a non-blocking reminder
+    (:func:`curve_icon_dbso.kinematics.resolve_output_dir`).
     """
     if analysis_stage not in ANALYSIS_STAGES:
         raise ValueError(

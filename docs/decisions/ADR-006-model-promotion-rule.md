@@ -1,12 +1,13 @@
 # ADR-006 — Model promotion rule
 
 **Status:** Approved by the owner on 2026-11-14 (DD-006); amended
-2026-11-15 — the former PI sign-off clause is retired (independent
-personal project); any non-synthetic promotion additionally requires a
-compliance-verified public dataset per `docs/approvals.md`
+2026-11-15/16 — the former PI sign-off clause is retired (independent
+personal project); for any non-synthetic promotion, the
+owner-responsibility guidance in `docs/approvals.md` applies first
+(recommended, never a gate)
 **Source:** `docs/mlops_extension_plan.md` §17, DD-006
 **Decided by:** owner (the plan's owner+PI wording predates the
-2026-11-15 retirement of the institutional gate)
+2026-11-15 retirement of the institutional framework)
 
 ## Decision
 
@@ -43,7 +44,7 @@ Rule integrity:
 
 - Phase 2 already implements this rule (manifest `beats_baseline` field);
   this ADR makes it the locked promotion policy for the synthetic track.
-- Any future non-synthetic promotion additionally requires a
-  compliance-verified public dataset (register in `docs/data_access.md`,
-  gate in `docs/approvals.md`); no compliance item is satisfied by this
-  decision.
+- For any future non-synthetic promotion, review the
+  owner-responsibility guidance first (register in
+  `docs/data_access.md`, notices in `docs/approvals.md` — recommended,
+  never a gate); no compliance item is satisfied by this decision.
