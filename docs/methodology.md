@@ -66,9 +66,10 @@ baselines, fixed hyperparameters, aligned out-of-fold predictions,
 MAE/RMSE/R²/Pearson with subject and recording counts. Each recording
 is one row; subjects contribute at most one recording in this dataset.
 
-**Provenance.** Artifacts are labeled `DABI — authorized local copy
-(owner agreement); exploratory kinematic target; NOT DBS outcome` and
-are written outside the repository by default. No participant-level
+**Provenance.** Artifacts are labeled `DABI — authorized local copy;
+exploratory kinematic target; NOT DBS outcome` and are written to the
+designated gitignored local directories (`outputs/`, `artifacts/`) or
+other local paths by default. No participant-level
 values are committed.
 
 **Known caveats (stated up front).** n ≈ 31 recordings is still small;

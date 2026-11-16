@@ -203,22 +203,25 @@ def test_kinematic_model_matrix_rejects_missing_columns_and_bad_target():
 
 # --- output-location reminder (non-blocking, docs/data_access.md) -------------
 
-def test_resolve_output_dir_requires_explicit_path_and_warns_inside_repo(tmp_path):
+def test_resolve_output_dir_designated_dirs_and_warns_elsewhere(tmp_path):
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     # An explicit path is still required (API ergonomics, not a gate)...
     with pytest.raises(DataValidationError, match="explicit output directory"):
         resolve_output_dir(None, repo_root)
-    # ...but an in-repository path is a WARNING — the run proceeds.
+    # Designated gitignored directories are silent.
+    for name in ("outputs", "data", "artifacts"):
+        result = resolve_output_dir(repo_root / name / "run1", repo_root)
+        assert result == (repo_root / name / "run1").resolve()
+    # An in-repo path OUTSIDE the designated directories warns — the run proceeds.
     with pytest.warns(UserWarning, match="inside the repository"):
-        inside = resolve_output_dir(repo_root / "outputs" / "real", repo_root)
-    assert inside == (repo_root / "outputs" / "real").resolve()
+        assert resolve_output_dir(repo_root / "docs", repo_root) == (
+            repo_root / "docs").resolve()
     with pytest.warns(UserWarning, match="inside the repository"):
         assert resolve_output_dir(repo_root, repo_root) == repo_root.resolve()
     # allow_in_repo is accepted for call compatibility and changes nothing.
-    with pytest.warns(UserWarning, match="inside the repository"):
-        assert resolve_output_dir(repo_root / "outputs", repo_root,
-                                  allow_in_repo=False) == (
-            repo_root / "outputs").resolve()
+    assert resolve_output_dir(repo_root / "outputs", repo_root,
+                              allow_in_repo=False) == (
+        repo_root / "outputs").resolve()
     outside = resolve_output_dir(tmp_path / "outside" / "results", repo_root)
     assert outside == (tmp_path / "outside" / "results").resolve()

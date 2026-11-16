@@ -60,11 +60,13 @@ When using any non-synthetic (external) data, the owner is responsible
 for the following. These are reminders that may be repeated by scripts
 or documentation — they never prevent any work:
 
-1. **Authorization coverage.** Confirm the data's use is covered by
-   your documented authorization from its distributor (for the DABI
-   pilot data: analysis and publication of research findings
-   authorized; the data itself is not redistributable), and record the
-   dataset's facts in the register ([`docs/data_access.md`](data_access.md)).
+1. **Authorization basis (recorded).** The DABI pilot data is used
+   under the owner's independent authorization from the distributor —
+   analysis and publication of research findings; the data itself is
+   not redistributable. Facts live in the register
+   ([`docs/data_access.md`](data_access.md)) when known; missing
+   metadata is recorded `UNKNOWN` / `TO BE VERIFIED` and never blocks
+   any work.
 2. **Terms conformance.** Keep analysis, derived artifacts, attribution,
    and any publication conformant with the agreement's terms; publish
    findings, never the data.
@@ -85,8 +87,9 @@ Additional standing rules for this file:
 - No account IDs, subject codes, per-subject values, credentials, or
   private evidence documents may be added to this file.
 - Dataset facts (name, URL, version, license, terms) are recorded only
-  from the source itself. Unknown fields stay explicit `[REQUIRED]`
-  placeholders in the register — they are never guessed or invented.
+  from the source itself. Unknown fields stay explicit `UNKNOWN` /
+  `TO BE VERIFIED` values in the register — they are never guessed or
+  invented.
 - Institutional items above are `NOT_APPLICABLE`, never `APPROVED`.
 
 ## Owner design decisions are not compliance verifications

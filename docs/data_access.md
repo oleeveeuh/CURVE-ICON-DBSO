@@ -36,40 +36,44 @@ repository blocks work pending it.
 Every third-party dataset should be recorded here — one entry per
 dataset, every field taken from the source itself. No field may be
 guessed: until the facts are looked up, they stay explicit
-`[REQUIRED]` placeholders. A complete entry is a courtesy to future
-readers and a record of the owner's due diligence; missing or
+`UNKNOWN` / `TO BE VERIFIED` values. A complete entry is a courtesy to
+future readers and a record of the owner's due diligence; missing or
 incomplete entries never block any repository work.
 
 ### Entry — USC DABI kinematic/ECoG pilot collection
 
-- Dataset name: **USC DABI (Data Archive for the BRAIN Initiative) —
-  the pilot intracranial/ECoG collection used for the kinematic
-  analysis** *(exact collection title/accession [REQUIRED — from the
-  authorization documents])*
-- Canonical URL: **[REQUIRED — DABI dataset page/DOI]**
-- Version / accession: **[REQUIRED]**
-- Access date: **[REQUIRED — date of the owner's own authorization]**
-- Authorization basis: **the owner's independent agreement with the
-  distributor (owner attestation 2026-11-16; not via the former lab)**
-- License or terms: **[REQUIRED — verbatim citation from the
-  agreement]**
-- Permitted uses: **analysis and publication of research findings
-  (owner attestation 2026-11-16)**
-- Attribution requirements: **[REQUIRED — required citation text]**
-- Redistribution / training restrictions: **the data itself may not be
-  published or redistributed; it stays on the owner's machine, outside
-  this repository; findings are published as findings, never as data**
+- Dataset name: USC DABI (Data Archive for the BRAIN Initiative) — the
+  pilot intracranial/ECoG collection used for the kinematic analysis
+- Canonical URL: UNKNOWN (the distributor's public collection page /
+  DOI is TO BE VERIFIED from the official public page when consulted)
+- Version / accession: UNKNOWN
+- Access date: UNKNOWN
+- Authorization basis: the owner's independent agreement with the
+  distributor (owner attestation 2026-11-16; not via the former lab)
+- License or terms: UNKNOWN (verbatim terms TO BE VERIFIED from the
+  agreement)
+- Permitted uses: analysis and publication of research findings
+  (owner attestation 2026-11-16)
+- Attribution requirements: UNKNOWN
+- Redistribution / training restrictions: the data itself may not be
+  published or redistributed; it stays local; findings are published
+  as findings, never as data
 
-Facts marked `[REQUIRED]` come only from the authorization documents
-and are never guessed. The attested permitted/restricted uses above are
-the owner's summary; the agreement text governs.
+**Register fields are informational.** `UNKNOWN` / `TO BE VERIFIED`
+fields may be filled in whenever the public page or agreement text is
+at hand; missing or incomplete fields generate at most a non-blocking
+warning and never stop implementation, testing, analysis, or output
+generation. Facts are never guessed — an unfilled field stays
+`UNKNOWN`.
 
 ## If you adapt this pipeline to the authorized dataset
 
-1. Keep the data and anything derived from it **outside the
-   repository**, and complete the register facts above from the
-   authorization documents (recommended). A code repository license —
-   even this one — grants **no** rights to third-party data.
+1. Keep raw data and per-subject derived files in the designated
+   gitignored directories (`data/`, `outputs/`, `artifacts/`) or other
+   local paths — they are never committed. Completing the register
+   facts above is recommended whenever convenient; it never gates any
+   work. A code repository license — even this one — grants **no**
+   rights to third-party data.
 2. Store the data locally, outside this repository (the `.gitignore`
    blocks common data file types, but do not rely on that alone).
 3. Run the extraction step against your local copy, for example:
@@ -146,13 +150,14 @@ attribution requirements allow:
 
 ## Recommended storage locations
 
-- **External (non-synthetic) data:** the owner's local copy, outside
-  this repository checkout (`data/` is gitignored, but do not rely on
-  gitignore alone).
-- **External per-subject outputs:** outside the repository by default;
-  in-repo paths are discouraged for real-derived outputs (`outputs/` is
-  gitignored; prefer a path outside the checkout regardless). Scripts
-  print a reminder if an in-repo output path is used.
+- **External (non-synthetic) data:** local paths; the designated
+  in-repository locations are the gitignored `data/` and `outputs/`
+  directories (gitignore keeps them out of version control; anything
+  not matching the ignore rules will be flagged by the scanner as a
+  non-blocking notice).
+- **External per-subject outputs:** the same designated gitignored
+  directories (`outputs/`, `artifacts/`) or any local path; they are
+  simply never committed.
 - **Synthetic-track cloud:** a personal AWS account may host synthetic
   artifacts only. This happened once (deployed 2026-11-14, verified and
   destroyed 2026-11-15; only the Terraform remote-state store is
@@ -209,18 +214,18 @@ container image, logs, CI artifacts):
 Any repository script that reads non-synthetic (external) data:
 
 1. **prints a reminder** about the owner's data responsibilities
-   (use covered by the documented distributor authorization; raw data,
-   subject codes, and per-subject outputs stay out of the repository) —
-   purely informational; the reminder never prevents a run.
+   (raw data, subject codes, and per-subject outputs stay out of
+   version control; findings are published as findings, never as data)
+   — purely informational; the reminder never prevents a run.
    `scripts/evaluate_real_kinematics.py` accepts an optional
    `--acknowledge-data-use` note that is recorded in the run summary as
    provenance when given, and prints the reminder when it is not;
-2. **defaults outputs outside the repository checkout** and prints a
-   warning (never an error) if an in-repository output path is used;
+2. **writes outputs to designated gitignored local directories**
+   (`data/`, `outputs/`, `artifacts/`) or other local paths — an in-repo
+   path outside those directories prints a warning (never an error);
 3. **records provenance** on its outputs
-   (`DABI — authorized local copy (owner agreement); exploratory
-   kinematic target; NOT DBS outcome`, per the methodology's labeling
-   convention).
+   (`DABI — authorized local copy; exploratory kinematic target; NOT
+   DBS outcome`, per the methodology's labeling convention).
 
 The `scripts/evaluate_real_kinematics.py` and
 `scripts/build_kinematic_table.py` scripts implement these reminders

@@ -260,6 +260,11 @@ def build_kinematic_model_matrix(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Ser
     return x, y, groups
 
 
+#: Repository directories designated (and gitignored) for local data and
+#: generated outputs — docs/data_access.md "Recommended storage locations".
+DESIGNATED_LOCAL_DIRS = ("data", "outputs", "artifacts")
+
+
 def resolve_output_dir(
     output_dir: str | Path | None,
     repo_root: Path | None,
@@ -267,29 +272,36 @@ def resolve_output_dir(
 ) -> Path:
     """Resolve the output directory and remind about the location rule.
 
-    Real-data scripts default outputs **outside** the repository
-    (docs/data_access.md): ``output_dir`` is required (no implicit
-    default). A path inside the repository checkout produces a
-    ``UserWarning`` — a reminder, never an error; the run proceeds.
-    ``allow_in_repo`` is accepted for call compatibility and no longer
-    changes behavior.
+    ``output_dir`` is required (no implicit default). Outputs may live
+    anywhere, including the designated gitignored repository directories
+    (``data/``, ``outputs/``, ``artifacts/``). An in-repo path *outside*
+    those designated directories produces a ``UserWarning`` — a
+    reminder, never an error; the run proceeds. ``allow_in_repo`` is
+    accepted for call compatibility and no longer changes behavior.
     """
     if output_dir is None:
         raise DataValidationError(
-            "An explicit output directory is required for real-data runs; the "
-            "recommended location is outside the repository checkout "
-            "(docs/data_access.md)."
+            "An explicit output directory is required for real-data runs; "
+            "gitignored data/, outputs/, or artifacts/ directories are the "
+            "designated local locations (docs/data_access.md)."
         )
     path = Path(output_dir).expanduser().resolve()
     if repo_root is not None:
         root = Path(repo_root).resolve()
         if path == root or root in path.parents:
-            warnings.warn(
-                f"Output path {path} is inside the repository checkout. "
-                "Real-derived outputs are recommended to live outside the "
-                "checkout (docs/data_access.md). This is a reminder — the run "
-                "continues.",
-                UserWarning,
-                stacklevel=2,
+            relative = path.relative_to(root)
+            designated = (
+                relative != Path(".")
+                and relative.parts[0] in DESIGNATED_LOCAL_DIRS
             )
+            if not designated:
+                warnings.warn(
+                    f"Output path {path} is inside the repository checkout but "
+                    f"not under a designated gitignored directory "
+                    f"({', '.join(DESIGNATED_LOCAL_DIRS)}). Move it under one "
+                    "of those (or .gitignore it) so generated files are never "
+                    "committed. This is a reminder — the run continues.",
+                    UserWarning,
+                    stacklevel=2,
+                )
     return path

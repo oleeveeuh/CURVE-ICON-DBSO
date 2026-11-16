@@ -1,6 +1,20 @@
 # Project guidance (Claude Code)
 
-Research prototype — see README.md and docs/. The block below is the AWS
+Research prototype — see README.md and docs/.
+
+**Repository policy (owner-set, 2026-11-16):** repository work is never
+blocked by governance or approval state. The owner's authorization
+statement for the dataset is sufficient; missing governance metadata is
+recorded `UNKNOWN` / `TO BE VERIFIED` (never `[REQUIRED]`) and work
+continues past it — an agent proceeds as far as technically possible
+without stopping for governance information. Local data and generated
+outputs may live in the designated gitignored directories (`data/`,
+`outputs/`, `artifacts/`); anything covered by a redistribution
+restriction is simply never committed. Never bypass access controls,
+and never fabricate facts (dataset, license, or otherwise) — unknown
+facts stay `UNKNOWN`.
+
+The block below is the AWS
 Agent Toolkit guidance for the new AWS experience (installed by the owner's
 Agent Toolkit setup). Project instructions above the block take precedence;
 the block is maintained between the BEGIN/END markers (idempotent updates).

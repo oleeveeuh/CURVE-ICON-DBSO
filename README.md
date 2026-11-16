@@ -437,9 +437,9 @@ participant data out of version control.
   research findings are authorized; the data itself is not
   redistributable. Its citation facts (collection title/accession, DOI,
   access date, required attribution) are recorded in the register
-  ([docs/data_access.md](docs/data_access.md)); the
-  `[REQUIRED]` placeholders there are completed from the authorization
-  documents and must be filled before any publication of findings.
+  ([docs/data_access.md](docs/data_access.md)); fields not yet looked
+  up are marked `UNKNOWN` / `TO BE VERIFIED` there and filled in
+  whenever the public page or agreement text is at hand.
 - **License:** [MIT](LICENSE) (decided 2026-11-16). The code is MIT-licensed;
   no dataset is included or distributed with this repository, and any
   third-party data you bring remains governed by its own recorded terms.

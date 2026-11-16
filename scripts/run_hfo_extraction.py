@@ -21,11 +21,10 @@ from curve_icon_dbso.errors import CurveIconError
 from curve_icon_dbso.hfo import aggregate_to_subject, extract_dataset
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): confirm this data use is covered by your "
-    "documented authorization from its distributor (analysis and "
-    "publication of findings; the data itself is not redistributable), "
-    "and keep raw data, subject codes, and per-subject outputs outside "
-    "the repository. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): keep raw data, subject codes, and "
+    "per-subject outputs out of version control (gitignored data/, "
+    "outputs/, artifacts/ are the designated local locations); findings "
+    "are published as findings, never as data. See docs/data_access.md. "
     "This reminder never prevents a run."
 )
 

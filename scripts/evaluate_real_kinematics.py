@@ -57,16 +57,15 @@ from curve_icon_dbso.kinematics import (
 from curve_icon_dbso.reporting import save_outputs
 
 PROVENANCE_REAL_KINEMATIC = (
-    "DABI — authorized local copy (owner agreement); "
+    "DABI — authorized local copy; "
     "exploratory kinematic target; NOT DBS outcome"
 )
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): confirm this data use is covered by your "
-    "documented authorization from its distributor (analysis and "
-    "publication of findings; the data itself is not redistributable), "
-    "and keep raw data, subject codes, and per-subject outputs outside "
-    "the repository. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): keep raw data, subject codes, and "
+    "per-subject outputs out of version control (gitignored data/, "
+    "outputs/, artifacts/ are the designated local locations); findings "
+    "are published as findings, never as data. See docs/data_access.md. "
     "This reminder never prevents a run."
 )
 
@@ -84,8 +83,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Per-recording kinematic feature table (one row per "
                              "recording; KINEMATIC_FEATURES + tap_rate_mean + subject)")
     parser.add_argument("--output-dir", type=Path, required=True,
-                        help="Output directory — recommended outside this repository "
-                             "(an in-repo path prints a warning and still runs)")
+                        help="Output directory (gitignored data/, outputs/, "
+                             "artifacts/ repo directories are fine; an in-repo "
+                             "path outside them prints a warning and still runs)")
     parser.add_argument(
         "--acknowledge-data-use", default=None,
         help="Optional provenance note recorded in the run summary (e.g. the "

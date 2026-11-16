@@ -34,9 +34,10 @@ into these files — no claims are made here about any real source.
 QC behavior (methodology): recordings failing tap QC (fewer than 2
 contributing channel-blocks, no MOVE blocks, unusable glove data) are
 **excluded from the emitted table** and reported explicitly with their
-QC reason — never imputed, never zero-filled. Non-synthetic data must
-be stored outside the repository (docs/data_access.md); an in-repo
-output path prints a warning and still runs, and a non-blocking data-use
+QC reason — never imputed, never zero-filled. Data and outputs live in
+local/gitignored locations (``data/``, ``outputs/``, ``artifacts/`` or
+any local path) and are simply never committed; an in-repo output path
+outside those directories prints a warning, and a non-blocking data-use
 reminder is printed on every run.
 """
 
@@ -79,11 +80,10 @@ QC_COLUMNS = (
 )
 
 DATA_USE_REMINDER = (
-    "REMINDER (non-blocking): confirm this data use is covered by your "
-    "documented authorization from its distributor (analysis and "
-    "publication of findings; the data itself is not redistributable), "
-    "and keep raw data, subject codes, and per-subject outputs outside "
-    "the repository. See docs/data_access.md and docs/approvals.md. "
+    "REMINDER (non-blocking): keep raw data, subject codes, and "
+    "per-subject outputs out of version control (gitignored data/, "
+    "outputs/, artifacts/ are the designated local locations); findings "
+    "are published as findings, never as data. See docs/data_access.md. "
     "This reminder never prevents a run."
 )
 
@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
                              "(see the module docstring for the key contract)")
     parser.add_argument("--output-csv", type=Path, required=True,
                         help="Where to write the per-recording feature table "
-                             "(recommended outside this repository)")
+                             "(gitignored data/, outputs/, artifacts/ are fine)")
     args = parser.parse_args(argv)
 
     print(DATA_USE_REMINDER, file=sys.stderr)

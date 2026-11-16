@@ -25,7 +25,9 @@ DOCS = REPO_ROOT / "docs"
 
 # Operative gate language that must NOT reappear in the governance docs.
 # (Historical narrative may describe the retired framework; these markers
-# are the active-checklist/status machinery itself.)
+# are the active-checklist/status machinery itself. "[REQUIRED]" belongs
+# to that family: unknown metadata is recorded UNKNOWN / TO BE VERIFIED,
+# never as a prerequisite.)
 FORBIDDEN_GATE_MARKERS = [
     "- Status:",
     "Status: OPEN",
@@ -37,6 +39,7 @@ FORBIDDEN_GATE_MARKERS = [
     "must pass the compliance register",
     "refuses to run",
     "refuse to run",
+    "[REQUIRED]",
 ]
 
 REQUIRED_DATASET_REGISTER_FIELDS = [
@@ -84,8 +87,9 @@ def test_external_data_script_has_no_gate():
 
 
 def test_output_location_rule_is_a_warning_not_an_error():
-    """resolve_output_dir must WARN (not raise) on in-repository output
-    paths — the location guidance is a reminder, never a blocker."""
+    """resolve_output_dir must WARN (not raise) on in-repo output paths
+    outside the designated gitignored directories, and stay silent for
+    the designated ones — a reminder, never a blocker."""
     import sys
 
     sys.path.insert(0, str(REPO_ROOT / "src"))
@@ -93,9 +97,11 @@ def test_output_location_rule_is_a_warning_not_an_error():
         from curve_icon_dbso.kinematics import resolve_output_dir
     finally:
         sys.path.pop(0)
-    with pytest.warns(UserWarning, match="inside the repository"):
-        result = resolve_output_dir(REPO_ROOT / "outputs" / "x", REPO_ROOT)
-    assert result == (REPO_ROOT / "outputs" / "x").resolve()
+    designated = resolve_output_dir(REPO_ROOT / "outputs" / "x", REPO_ROOT)
+    assert designated == (REPO_ROOT / "outputs" / "x").resolve()
+    with pytest.warns(UserWarning, match="designated gitignored directory"):
+        result = resolve_output_dir(REPO_ROOT / "plans" / "x", REPO_ROOT)
+    assert result == (REPO_ROOT / "plans" / "x").resolve()
 
 
 def test_approvals_file_records_institutional_items_not_applicable():
@@ -139,8 +145,11 @@ def test_data_access_documents_the_guidance_sections_and_the_register():
         assert required in text, f"data_access.md is missing section/rule: {required}"
     for field in REQUIRED_DATASET_REGISTER_FIELDS:
         assert field in text, f"data_access.md register is missing field: {field}"
-    assert "[REQUIRED]" in text, (
-        "unknown dataset facts must stay explicit [REQUIRED] placeholders"
+    assert "UNKNOWN" in text and "TO BE VERIFIED" in text, (
+        "unknown dataset facts must be recorded UNKNOWN / TO BE VERIFIED"
+    )
+    assert "never stop" in text, (
+        "the register must state that incomplete fields never stop work"
     )
 
 
@@ -148,7 +157,7 @@ def test_data_access_describes_non_blocking_script_reminders():
     """The script-behavior contract: reminders that never prevent a run."""
     text = (DOCS / "data_access.md").read_text()
     assert "never prevents a run" in text
-    assert "warning, not an error" in text or "never an error" in text
+    assert "warning (never an error)" in text or "never an error" in text
 
 
 def test_decision_log_covers_dd_001_through_dd_006():

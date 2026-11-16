@@ -17,7 +17,7 @@
 **Purpose:** Sequenced prompts for implementing the modernization defined in `docs/mlops_extension_plan.md`.  
 **Repository:** `~/CURVE-ICON-DBSO`  
 **Use:** Run one prompt at a time, in order. Review its handoff before starting the next prompt.  
-**Important:** The approval/authorization preconditions written inside these historical prompts are no longer operative (see the status note above). Repository work — writing, implementation, experimentation, testing, analysis, and documentation changes — is never blocked pending any approval.
+**Important:** The approval/authorization preconditions written inside these historical prompts are no longer operative (see the status note above). Repository work — writing, implementation, experimentation, testing, analysis, and documentation changes — is never blocked pending any approval or governance information: an agent continues as far as technically possible, recording unknown metadata as `UNKNOWN` / `TO BE VERIFIED` rather than stopping. The owner's authorization statement for the dataset is sufficient; data and outputs live in the gitignored `data/` / `outputs/` / `artifacts/` directories and are never committed when redistribution is not permitted. Never bypass access controls or fabricate facts.
 
 ## How to use this pack
 
