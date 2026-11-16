@@ -4,7 +4,7 @@
 **Prepared:** 2026-11-13  
 **Implementation status:** Not started  
 **Source:** Verified repository audit and user-provided extension proposal  
-**Audited repository:** `/Users/olivialiau/CURVE-ICON-DBSO` at commit `eb45b11`, including the five preserved working-tree modifications listed below  
+**Audited repository:** `~/CURVE-ICON-DBSO` at commit `eb45b11`, including the five preserved working-tree modifications listed below  
 **Design approval:** DD-001 through DD-003 approved by the project owner on 2026-11-13
 
 > **Governance amendment (2026-11-15, extended 2026-11-16):** the
@@ -752,4 +752,4 @@ Never publish the retracted R² = 0.713 as an achievement, call it accuracy, cla
 4. ~~Resolve DD-004 and DD-005 before Phase 4; resolve DD-006 with the PI before any real-model promotion.~~ — DD-004/005/006 approved by the owner 2026-11-14 (ADR-004…006). *(Amended 2026-11-15/16: the PI clause is retired with the institutional framework; for non-synthetic promotion the owner-responsibility guidance applies first — recommended, never a gate.)*
 5. ~~Correct the README test count~~ — done 2026-11-13 (hard-coded counts removed; the count is printed by pytest).
 6. Before analysis on any non-synthetic dataset, review the owner-responsibility guidance (`docs/data_access.md`, `docs/approvals.md`) — recommended guidance, never a gate.
-7. Resolve the kinematic prominence-floor binning ambiguity (see methodology) — owner decision — before any external-data QC decision rests on it.
+7. ~~Resolve the kinematic prominence-floor binning ambiguity (see methodology) — owner decision~~ — RESOLVED 2026-11-16: the owner retained the frozen in-band-share wording (`kinematics.py` unchanged); the alternative total-spectrum reading is rejected as a prespecification deviation. The binning sensitivity remains documented in the methodology and limitations.

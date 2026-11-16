@@ -40,9 +40,9 @@ Read this before drawing any conclusion from this repository.
   nearly unreachable: the floor passes almost every channel and the
   ≥ 2 channel-block rule does the exclusion work. The alternative
   "share of total-spectrum power" reading would discriminate sharply.
-  If a public dataset with the same binning ambiguity is adopted, the
-  project owner should settle the reading before relying on QC
-  decisions that rest on it (advisory, not a gate).
+  **Resolved 2026-11-16: the owner retained the frozen in-band
+  reading** (`kinematics.py` unchanged); the sensitivity stands as a
+  caveat on QC decisions from datasets with similar PSD binning.
 - The historical cortical-thickness "features" included accidental
   pandas merge-suffix columns (`*_x`, `*_y`); any interpretation of
   them as biomarkers is void.

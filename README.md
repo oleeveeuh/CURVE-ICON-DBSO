@@ -381,8 +381,9 @@ src/curve_icon_dbso/   package: config, synthetic cohort, features, HFO, kinemat
                        artifact, training, drift (PSI demonstration),
                        api/ (Phase 2 inference service)
 scripts/               CLI entry points (demo, synthetic model training, HFO
-                       extraction, kinematic evaluation, figure generation,
-                       drift demonstration, security scan, vulnerability gate)
+                       extraction, kinematic table builder + evaluation,
+                       figure generation, drift demonstration, security scan,
+                       vulnerability gate)
 locust/                load-test profile (synthetic payloads only; OBS-003)
 deploy/                optional local-kind Helm chart + cluster config (Phase 7)
 tests/                 offline test suite (count printed by pytest)
@@ -429,9 +430,9 @@ participant data out of version control.
   redistribution/training restrictions in the register
   ([docs/data_access.md](docs/data_access.md)). No dataset is recorded
   yet, so there is no dataset citation to publish.
-- **License:** deliberately absent. A license decision has not been made; until
-  one is, all rights are reserved by default and the repository is not licensed
-  for reuse.
+- **License:** [MIT](LICENSE) (decided 2026-11-16). The code is MIT-licensed;
+  no dataset is included or distributed with this repository, and any
+  third-party data you bring remains governed by its own recorded terms.
 
 ## Known limitations
 

@@ -206,6 +206,9 @@ Any repository script that reads non-synthetic (external) data:
    kinematic target; NOT DBS outcome`, per the methodology's labeling
    convention).
 
-The `scripts/evaluate_real_kinematics.py` script (Phase 1) implements
-these reminders. The `scripts/run_hfo_extraction.py` script predates
-the convention and prints the same reminder.
+The `scripts/evaluate_real_kinematics.py` and
+`scripts/build_kinematic_table.py` scripts implement these reminders
+(the builder is the source-agnostic extraction half: per-recording
+`.npz` files in, the per-recording feature table out). The
+`scripts/run_hfo_extraction.py` script predates the convention and
+prints the same reminder.

@@ -17,12 +17,13 @@ produces a warning, not an error (docs/data_access.md reminders).
 **What is implemented vs intentionally not:** the evaluation half
 (grouped CV with baselines, bootstrap CIs, permutation null, provenance,
 MLflow lineage) is complete and rehearsed on synthetic fixtures in the
-test suite. The raw-file extraction half (parsing a source's raw tables
-into a per-recording feature table) is not implemented yet: it is best
-developed against a concrete dataset. This script therefore consumes a
-per-recording feature table (one row per recording) produced by that
-future extraction step — which is why its input contract is a plain
-CSV.
+test suite. The extraction half exists in source-agnostic form:
+``scripts/build_kinematic_table.py`` turns per-recording ``.npz`` files
+into the feature table this script consumes (the full chain is
+rehearsed on synthetic fixtures in ``tests/test_kinematic_table.py``).
+What awaits a concrete dataset is only the thin loader from that
+source's raw tables into the documented ``.npz`` contract — nothing
+here claims or guesses any real source's format.
 
 Example:
 

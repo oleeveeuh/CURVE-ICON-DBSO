@@ -79,18 +79,18 @@ rather than amplitude. Tapping conditions are intraoperative
 column records it but is not a predictor). At n ≈ 31 with 5
 predictors, any "finding" is hypothesis-generating only.
 
-**Prespecification ambiguity to resolve before any external-data
-run.** The prominence floor ("dominant peak carries ≥ 0.20 of
-total in-band power") is sensitive to the PSD binning: with the
-prespecified 1 s Welch windows the frequency resolution is 1 Hz, so the
-0.5–4.0 Hz band contains only ~4 bins and a peak-bin share below 0.20
-is essentially unreachable — the floor as worded passes nearly every
-channel and the ≥ 2 channel-block QC rule carries the exclusion. An
-alternative reading (peak share of *total-spectrum* power) would
-discriminate sharply but is not what the frozen text says. The
-implementation follows the frozen wording (`kinematics.py`); the
-project owner should settle this reading before relying on any
-external-data QC decision that rests on it (advisory, not a gate).
+**Prespecification note (resolved 2026-11-16).** The prominence floor
+("dominant peak carries ≥ 0.20 of total in-band power") is sensitive to
+the PSD binning: with the prespecified 1 s Welch windows the frequency
+resolution is 1 Hz, so the 0.5–4.0 Hz band contains only ~4 bins and a
+peak-bin share below 0.20 is essentially unreachable — the floor as
+worded passes nearly every channel and the ≥ 2 channel-block QC rule
+carries the exclusion. An alternative reading (peak share of
+*total-spectrum* power) would discriminate sharply but deviates from
+the frozen text. **Resolved by the project owner (2026-11-16): the
+frozen in-band wording is retained** — `kinematics.py` implements it
+unchanged, and the binning sensitivity above remains the standing
+caveat on any external-data QC decision that rests on it.
 
 ## Uncertainty quantification (implemented 2026-11-13)
 
