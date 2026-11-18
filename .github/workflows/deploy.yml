@@ -50,6 +50,10 @@ env:
 jobs:
   build:
     name: Build and push image (sha-tagged)
+    # This repository's AWS account cannot create the GitHub OIDC provider.
+    # Keep the reusable delivery path visible, but skip it cleanly until an
+    # owner explicitly enables and configures it in a compatible account.
+    if: vars.OIDC_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

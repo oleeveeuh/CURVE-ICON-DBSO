@@ -10,11 +10,12 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
 (9 recordings)**.
 
 > ### note: exploratory research prototype — not for clinical use
-> Retrospective, single-center, n = 8. No valid study performance estimate exists in
-> this repository: the historical results were invalidated by a prediction-alignment
-> bug plus data leakage, and the only runnable results here are on **synthetic**
-> verification data. Nothing here supports clinical decision-making, counseling,
-> patient selection, or DBS programming.
+> Retrospective, single-center research with two small cohorts. No valid **DBS-outcome**
+> performance estimate exists: the historical n = 8 result was invalidated by a
+> prediction-alignment bug plus data leakage. A separate n = 31 real-data analysis of
+> concurrent finger-tapping behavior produced a negative exploratory result; it is
+> not a treatment-outcome study. Nothing here supports clinical decision-making,
+> counseling, patient selection, or DBS programming.
 >
 > **Independent personal project.** This repository is not sponsored by,
 > conducted for, or represented as affiliated with any former lab or
@@ -40,12 +41,38 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
   own figures showed −0.672. Root cause found: fold-order predictions saved against
   original-row-order subjects. This repository contains the corrected evaluation,
   tests that pin it, and the invalid figures archived as documentation.
-- **Status:** research prototype; negative/feasibility results expected and preserved.
-  Engineering through Phase 5 of [docs/mlops_extension_plan.md](docs/mlops_extension_plan.md)
-  is complete and verified: the ephemeral public synthetic AWS environment was
-  deployed, load-tested, failure-exercised, and **destroyed** (measured results and
-  teardown evidence in [docs/deployment_report.md](docs/deployment_report.md);
-  architecture in [docs/architecture.md](docs/architecture.md)).
+- **Status:** research prototype; negative/feasibility results are preserved rather
+  than optimized away. The scientific correction, follow-on study, inference API,
+  CI/security gates, Terraform/ECS deployment, observability, load test, rollback
+  exercise, and local Kubernetes comparison are complete. The ephemeral AWS
+  environment was **destroyed** after verification (measured evidence in
+  [docs/deployment_report.md](docs/deployment_report.md)).
+
+## Technical-recruiter summary
+
+This project demonstrates an end-to-end ML engineering workflow, not a successful
+clinical model:
+
+| Area | What was built | Measured evidence |
+|---|---|---|
+| ML validation | Subject-grouped nested CV, fold-local preprocessing, aligned out-of-fold predictions, naive baselines, cluster bootstrap intervals, and permutation/shift nulls | 31-subject follow-on study; 38,078 causal movement windows; complete corrective test matrix; global null reported honestly |
+| Modeling | Linear, tree-based, kernel, Bayesian, Gaussian-process, XGBoost, lagged decoding, DMD, and contrastive-representation components | No subject-level model met the promotion rule; movement decoder r = .063 but MAE .721 lost to persistence (.282) and block mean (.629) |
+| Production ML | Versioned feature schema, deterministic synthetic model artifact, hash-verified loading, FastAPI batch inference, Docker, and metadata-only logging | 189.5 MB image; 0.85 s median cold start; order-preserving batches of 1–256 rows |
+| Cloud/MLOps | Terraform-managed CloudFront → ALB → ECS Fargate, CI security/privacy gates, SBOM and vulnerability checks, CloudWatch alarms, load/drift/rollback exercises | 34,177 requests, 0 failures, p95 110 ms, zero restarts; rollback in about 70 s with zero dropped requests |
+| Engineering quality | Reproducible lock file, Python 3.11/3.12 CI, synthetic end-to-end fixtures, leakage and governance tests | 490 offline tests passed in the definitive local run; live GitHub status is shown by the Actions badge below |
+
+[![CI](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml/badge.svg)](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml)
+
+### Documentation guide
+
+| Reader goal | Start here |
+|---|---|
+| Understand the system and engineering decisions | [Architecture](docs/architecture.md) and [decision records](docs/decisions/README.md) |
+| Review scientific validity and exact results | [Methodology](docs/methodology.md), [limitations](docs/limitations.md), and [definitive follow-on results](docs/results_followon_real.md#v101-corrective-rerun-2026-11-18--definitive-frozen-contract-verdicts) |
+| Run the model service locally | [API and container guide](docs/api.md) |
+| Review deployment evidence | [Deployment report](docs/deployment_report.md) and [operations runbook](docs/runbook.md) |
+| Audit privacy and data boundaries | [Data-access policy](docs/data_access.md) and [architecture privacy boundary](docs/architecture.md#5-privacy-boundary) |
+| Understand historical plans/prompts | [Extension plan](docs/mlops_extension_plan.md) and implementation-prompt files; these are provenance, not current-status summaries |
 
 ## Research questions (two, kept strictly separate)
 
@@ -66,8 +93,9 @@ any signal about Deep Brain Stimulation outcome — on a pilot cohort of **8 sub
 
 Both questions use subjects (not rows) as evaluation units, fold-local
 preprocessing, baselines, aligned out-of-fold predictions, and fixed
-hyperparameters. Neither has produced a real-data result; the only runnable
-verification is synthetic.
+hyperparameters. The DBS-outcome question has no valid real-data result. The
+kinematic question was run on 31 authorized local recordings and produced a
+negative exploratory result; only sanitized aggregate results are published.
 
 ## Dataset and cohort
 
@@ -75,12 +103,14 @@ verification is synthetic.
 |---|---|
 | Source | USC DABI (Data Archive for the BRAIN Initiative) — processed locally under the owner's independent distributor authorization; **data not included in this repository** (see [docs/data_access.md](docs/data_access.md)) |
 | Modalities | UPDRS assessments (pre/post) · intracranial ECoG + recording metadata · cortical thickness (MRI) · HFO features |
-| Cohort | **8 unique subjects, 9 recordings** — one subject contributes 2 recordings (REST + MOVE); remaining subjects contribute 1 |
+| Historical DBS-outcome cohort | **8 unique subjects, 9 recordings** — one subject contributes 2 recordings (REST + MOVE); remaining subjects contribute 1 |
+| Follow-on kinematic cohort | **31 subjects / 31 recordings** for subject-level analyses; 29 recordings yielded usable MOVE windows |
 | Counts in results | Every result reports both subject and recording counts |
 | Privacy | No participant data, subject identifiers, raw signals, or per-subject outputs are committed; `data/`, `outputs/`, `*.csv`, `*.mat` are gitignored |
 
-The 8/9 structure comes from tracked historical artifacts and is marked unverified
-against the source data.
+The historical 8/9 structure comes from tracked artifacts and is marked unverified
+against the source data. The 31-subject follow-on counts are recorded by the
+authorized local run; participant-level files remain outside version control.
 
 ![Cohort and modality flow](figures/cohort_modality_flow.png)
 
@@ -140,7 +170,7 @@ exactly 8 held-out predictions. R² and correlation are highly unstable at this 
 
 ## Verified results
 
-**No valid real-data performance estimate exists.** The historical numbers
+**No valid DBS-outcome performance estimate exists.** The historical numbers
 (R² 0.713 / 0.845) were products of the misalignment + leakage defects and are
 retracted; their figures are archived under
 [`figures/archive/`](figures/archive/README.md) as documentation of the defect.
@@ -376,10 +406,11 @@ ruff check src tests scripts
 
 With `--extra cloud` installed, the two Locust load-test-profile tests run
 as well; without it they skip with an explanatory message. The container
-tests build and measure a real image wherever a Docker daemon exists —
-one of them asserts a real timing budget (< 2 s cold start) and can
-fail on a heavily loaded machine; the deployment record measured 0.85 s
-median on an idle one ([docs/deployment_report.md](docs/deployment_report.md)).
+tests build and measure a real image wherever a Docker daemon exists. Local
+runs retain the < 2 s target; CI uses a 10 s gross-regression ceiling because
+hosted-runner Docker scheduling is variable. The deployment benchmark remains
+the measured 0.85 s median on an idle environment
+([docs/deployment_report.md](docs/deployment_report.md)).
 
 Coverage includes: OOF alignment under nonsequential folds, subject-group
 integrity, fold-local fitting, hand-calculated metrics, HFO detection on synthetic
@@ -427,12 +458,12 @@ participant data out of version control.
 
 ## Realistic future work
 
-1. Identify a legitimately public dataset that fits the kinematic analysis,
-   record its facts in the register ([docs/data_access.md](docs/data_access.md))
-   — recommended guidance, not a gate — then run and publish the honest
-   result (likely null) with per-subject OOF tables.
-2. Grow the cohort (order 10² subjects) from public or newly consented
-   sources before any model comparison; pre-specify the primary analysis.
+1. Replicate the frozen kinematic analysis on an independent external cohort;
+   pre-register the requirement to beat persistence and block-mean baselines,
+   not merely a zero-correlation null.
+2. Grow the MOVE cohort to order 10² subjects and use longer movement segments;
+   the observed subject-level effect size near r = .1 would require roughly 800
+   subjects for a conventional 80%-power confirmation.
    (New data collection or any institutional involvement would be a scope
    change worth documenting — see the notices in
    [docs/approvals.md](docs/approvals.md).)
@@ -455,7 +486,7 @@ participant data out of version control.
 
 ## Known limitations
 
-Summarized in [docs/limitations.md](docs/limitations.md): n = 8 statistics,
-unverified cohort counts, single-center selection effects, unmodeled state
-confounds, band-power-only HFO features, and RNG determinism that is
-version-dependent.
+Summarized in [docs/limitations.md](docs/limitations.md): the historical n = 8
+outcome cohort, the 31-subject follow-on cohort, single-center selection effects,
+unmodeled state confounds, uncalibrated glove measurements, limited movement
+duration, and version-dependent numerical determinism.

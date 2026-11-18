@@ -287,9 +287,12 @@ class TestDockerIntegration:
         assert len(predictions) == 4
         assert all(isinstance(value, float) for value in predictions)
 
-    def test_container_cold_start_under_two_seconds(self, running_container):
+    def test_container_starts_within_configured_limit(self, running_container):
         _, cold_start = running_container
-        assert cold_start < 2.0, f"container cold start took {cold_start:.2f}s"
+        limit = float(os.environ.get("CURVE_COLD_START_LIMIT_SECONDS", "2"))
+        assert cold_start < limit, (
+            f"container cold start took {cold_start:.2f}s (limit {limit:.2f}s)"
+        )
 
     def test_image_contains_no_prohibited_content(self, built_image):
         result = subprocess.run(

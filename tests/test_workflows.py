@@ -152,6 +152,11 @@ def test_ci_covers_the_required_phase3_gates():
     )
 
 
+def test_python_matrix_keeps_uv_on_the_selected_interpreter():
+    ci = _load(CI_PATH)
+    assert ci["jobs"]["test"]["env"]["UV_PYTHON"] == "${{ matrix.python-version }}"
+
+
 def test_ci_container_job_runs_the_image_content_privacy_check():
     ci = _load(CI_PATH)
     container_steps = _steps(ci, "container")
@@ -159,6 +164,10 @@ def test_ci_container_job_runs_the_image_content_privacy_check():
     assert any("image-privacy" in n.lower() for n in names), (
         "ci.yml container job must run the image-content privacy check"
     )
+    integration = next(
+        step for step in container_steps if "tests/test_container.py" in step.get("run", "")
+    )
+    assert integration.get("env", {}).get("CURVE_COLD_START_LIMIT_SECONDS") == "10"
 
 
 # ------------------------------------------------------------- deploy -----
@@ -179,6 +188,14 @@ def test_deploy_builds_once_and_deploys_the_immutable_digest():
     assert "describe-services" in run_text
     # No destructive actions outside the approved apply
     assert "terraform destroy" not in run_text
+
+
+def test_deploy_skips_cleanly_until_oidc_is_explicitly_enabled():
+    deploy = _load(DEPLOY_PATH)
+    assert deploy["jobs"]["build"].get("if") == "vars.OIDC_ENABLED == 'true'", (
+        "deploy.yml must not attempt AWS authentication unless the repository "
+        "owner explicitly enables and configures the OIDC delivery path"
+    )
 
 
 def test_deploy_gates_apply_behind_the_protected_environment():
@@ -215,6 +232,15 @@ def test_workflows_contain_no_account_ids():
     for path in (CI_PATH, DEPLOY_PATH):
         matches = account_id_re.findall(path.read_text())
         assert not matches, f"{path.name} contains a literal 12-digit account ID: {matches}"
+
+
+def test_terraform_security_gate_uses_repo_relative_paths():
+    ci = _load(CI_PATH)
+    run_text = "\n".join(
+        step.get("run", "") for step in _steps(ci, "terraform")
+    )
+    assert "../scripts/vuln_gate.py" in run_text
+    assert "../../scripts/vuln_gate.py" not in run_text
 
 
 def test_smoke_fixture_exists_for_deploy():

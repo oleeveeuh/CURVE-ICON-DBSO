@@ -1,20 +1,22 @@
 # Architecture
 
-Current as of Phase 5 (2026-11-15). Complements: [methodology.md](methodology.md)
+Current through the v1.0.1 corrective follow-on run (2026-11-18). Complements: [methodology.md](methodology.md)
 (scientific design), [data_access.md](data_access.md) (privacy rules),
 [runbook.md](runbook.md) (operations), [deployment_report.md](deployment_report.md)
 (measured results from the one deployment), [decisions/](decisions/README.md)
 (ADRs).
 
 > **Research prototype — not for clinical use.** Everything shown here is
-> engineering verification on synthetic data; no clinical or scientific
-> result exists in this repository.
+> deployment and serving measurements use synthetic data. Sanitized aggregate
+> results from an exploratory, authorized local kinematic analysis are included,
+> but they are not clinical results and do not evaluate treatment outcome.
 
 ## 1. Local research flow (offline, no data required)
 
-The corrected evaluation loop is fully runnable on the deterministic
-synthetic cohort; the external-data script exists but has not been run
-against real data (data guidance is non-blocking — docs/approvals.md).
+The corrected evaluation loop is fully runnable on the deterministic synthetic
+cohort. The external-data path was also run locally on an authorized 31-subject
+kinematic cohort; only sanitized aggregate results are tracked here
+([results_followon_real.md](results_followon_real.md)).
 
 ```mermaid
 flowchart LR
@@ -42,8 +44,9 @@ Two research questions are kept separate ([methodology.md](methodology.md)):
 - **DBS-outcome prediction** (`updrs_improvement`; 7 prespecified
   features, n = 8) — **paused**: the clinical table was unavailable at
   analysis time and could not be recovered.
-- **Kinematic neural–motor analysis** (`tap_rate_mean`; 5 prespecified
-  predictors, n ≈ 31) — **active, prespecified**: exploratory, not DBS
+- **Kinematic neural–motor analysis** (`tap_rate_mean`; 5-feature reference
+  plus a frozen follow-on matrix, n = 31) — **executed, negative, exploratory**:
+  the v1.0.1 global-null verdict is definitive for the frozen matrix, not DBS
   outcome prediction.
 
 ## 2. Synthetic artifact flow (training → serving)
@@ -79,9 +82,9 @@ The image is the serving source of truth (`CURVE_ARTIFACT_DIR=/app/artifact`,
 trained during the build); the S3 copy is a lineage archive. Both are
 synthetic-only by policy.
 
-## 2b. Follow-on study flow (frozen contract v1.0.0)
+## 2b. Follow-on study flow (frozen contract v1.0.1)
 
-`protocol.py` (frozen machine-readable contract) → `neural_features`/`glove_phenotyping`/`signal_qc` (frozen feature extraction) → `subject_modeling` (nested subject-grouped REST/DELTA arms) → `move_modeling` + `dmd_representation` (window-level MOVE arm) → `scripts/run_followon_subject_modeling.py` and `scripts/run_followon_move_modeling.py` (local-only versioned runs). Executed 2026-11-16: sanitized aggregates in `docs/results_followon_real.md`.
+`protocol.py` (frozen machine-readable contract) → `neural_features`/`glove_phenotyping`/`signal_qc` (frozen feature extraction) → `subject_modeling` (nested subject-grouped REST/DELTA arms) → `move_modeling` + `dmd_representation` (window-level MOVE arm) → `scripts/run_followon_subject_modeling.py` and `scripts/run_followon_move_modeling.py` (local-only versioned runs). The original v1.0.0 run was corrected under v1.0.1 on identical manifest-verified inputs; the definitive aggregate verdict is in `docs/results_followon_real.md`.
 
 ## 3. CI/CD
 

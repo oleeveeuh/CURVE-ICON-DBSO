@@ -494,7 +494,7 @@ Rollback: Remove the container/API branch; no external state exists.
 
 ### Phase 3 — Continuous integration, delivery, and security gates
 
-**Status:** Repository implementation complete 2026-11-14 (uncommitted working tree). CI gates (locked install, Ruff, tests, coverage, secret/identifier scan, container build + SBOM + exceptions-aware vulnerability gate, image-privacy check, Terraform fmt/validate/lint/security, PR plan) and the OIDC-only deploy workflow are implemented and offline-validated; they remain UNEXERCISED against real AWS until the bootstrap, environment setup, and first apply are approved (Prompt 6).  
+**Status:** Repository implementation complete and committed. CI gates (locked install, Ruff, tests, coverage, secret/identifier scan, container build + SBOM + exceptions-aware vulnerability gate, image-privacy check, Terraform fmt/validate/lint/security, conditional PR plan) are implemented. The OIDC-only deploy workflow is retained for compatible accounts but skips unless `OIDC_ENABLED=true`; this account's managed SCP prevents creating the provider, so the measured deployment used the same Terraform path locally.
 **Estimated effort:** 2 days  
 **Dependencies:** Phase 2; public AWS account selection for delivery setup
 
@@ -516,7 +516,7 @@ Rollback: Disable the deployment workflow and OIDC trust; retain CI-only checks.
 
 ### Phase 4 — Public synthetic AWS environment
 
-**Status:** Terraform and operations documentation complete 2026-11-14 (uncommitted working tree) per **ADR-004** (CloudFront default-domain ingress, ephemeral; region us-east-2 — the new-AWS-experience project Region, switched from the earlier us-west-1 choice on 2026-11-14 before first apply), **ADR-005** (single root module, `dev` environment, Phase-4 bootstrap, GitHub environment `aws-synthetic`), and strict **ADR-006**. Offline acceptance criteria verified (format/validate/lint/security checks, least-privilege policy fixture tests, no account IDs committed). Deployment executed locally 2026-11-14/15 (this account's SCP denies OIDC providers, so the GitHub deploy path is intentionally disabled here); verified end to end, exercised through Phase 5, and **destroyed 2026-11-15** with an empty after-destroy orphan check — measured record: `docs/deployment_report.md`.  
+**Status:** Terraform and operations documentation complete and committed per **ADR-004** (CloudFront default-domain ingress, ephemeral; region us-east-2), **ADR-005** (single root module, `dev` environment, Phase-4 bootstrap, GitHub environment `aws-synthetic`), and strict **ADR-006**. Offline acceptance criteria verified (format/validate/lint/security checks, least-privilege policy fixture tests, no account IDs committed). Deployment executed locally 2026-11-14/15 (this account's SCP denies OIDC providers, so the GitHub deploy path is intentionally disabled here); verified end to end, exercised through Phase 5, and **destroyed 2026-11-15** with an empty after-destroy orphan check — measured record: `docs/deployment_report.md`.
 **Estimated effort:** 2–4 days  
 **Dependencies:** Phase 3 and decisions **DD-004** and **DD-005**
 
