@@ -1,12 +1,12 @@
 {
   "rows": [
     {
-      "Brady_Asymmetry": 0.3076923076923077,
-      "Rigidity_Asymmetry": 0.1111111111111111,
+      "Brady_Asymmetry": 0.307692307692,
+      "Rigidity_Asymmetry": 0.111111111111,
       "Tremor_Asymmetry": 0.0,
       "age": 47.0,
-      "hfo_peak_freq_mean": 321.7195839822765,
-      "hfo_power_mean": 1.1583176596280784,
+      "hfo_peak_freq_mean": 321.719583982277,
+      "hfo_power_mean": 1.158317659628,
       "years_since_diagnosis": 16.0
     },
     {
@@ -14,26 +14,26 @@
       "Rigidity_Asymmetry": 0.6,
       "Tremor_Asymmetry": 0.1,
       "age": 61.0,
-      "hfo_peak_freq_mean": 250.72658503661984,
-      "hfo_power_mean": 1.8815857959427875,
+      "hfo_peak_freq_mean": 250.72658503662,
+      "hfo_power_mean": 1.881585795943,
       "years_since_diagnosis": 18.0
     },
     {
-      "Brady_Asymmetry": 0.36363636363636365,
-      "Rigidity_Asymmetry": 0.14285714285714285,
+      "Brady_Asymmetry": 0.363636363636,
+      "Rigidity_Asymmetry": 0.142857142857,
       "Tremor_Asymmetry": 0.0,
       "age": 70.0,
       "hfo_peak_freq_mean": 178.604375033327,
-      "hfo_power_mean": 0.8612420870617206,
+      "hfo_power_mean": 0.861242087062,
       "years_since_diagnosis": 5.0
     },
     {
-      "Brady_Asymmetry": 0.03225806451612903,
-      "Rigidity_Asymmetry": 0.1111111111111111,
+      "Brady_Asymmetry": 0.032258064516,
+      "Rigidity_Asymmetry": 0.111111111111,
       "Tremor_Asymmetry": 0.04,
       "age": 74.0,
-      "hfo_peak_freq_mean": 282.5728425527165,
-      "hfo_power_mean": 1.2328760680272999,
+      "hfo_peak_freq_mean": 282.572842552717,
+      "hfo_power_mean": 1.232876068027,
       "years_since_diagnosis": 9.0
     }
   ]

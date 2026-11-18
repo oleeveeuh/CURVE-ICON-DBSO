@@ -26,6 +26,13 @@ from .. import features as features_mod
 from ..schema import FEATURE_LIMITS
 from ..synthetic import generate_synthetic_cohort
 
+_PUBLIC_PAYLOAD_DECIMALS = 12
+
+
+def _canonical_public_float(value: float) -> float:
+    """Remove platform-level ULP noise from public synthetic JSON fixtures."""
+    return round(float(value), _PUBLIC_PAYLOAD_DECIMALS)
+
 
 def _cohort_feature_frame(n_subjects: int, seed: int) -> pd.DataFrame:
     """Feature matrix from the synthetic cohort, in canonical schema order."""
@@ -50,7 +57,10 @@ def synthetic_payload_rows(n_rows: int, *, seed: int = 42, n_subjects: int = 8) 
     rng = np.random.default_rng(seed)
     indices = rng.integers(0, len(frame), size=n_rows)
     return [
-        {name: float(frame.iloc[idx][name]) for name in frame.columns}
+        {
+            name: _canonical_public_float(frame.iloc[idx][name])
+            for name in frame.columns
+        }
         for idx in indices
     ]
 
