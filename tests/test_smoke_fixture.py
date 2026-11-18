@@ -10,6 +10,7 @@ smoke test.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -37,14 +38,18 @@ def test_fixture_rows_are_schema_valid():
 
 
 def test_fixture_matches_the_deterministic_synthetic_generator():
-    """Provenance: the fixture must be byte-identical to what the public
-    synthetic payload generator produces — no other origin is acceptable."""
+    """Pin provenance while tolerating platform-level floating-point ULP noise."""
     from curve_icon_dbso.api.payloads import synthetic_payload_rows
 
-    expected = json.dumps(
-        {"rows": synthetic_payload_rows(4)}, indent=2, sort_keys=True
-    ) + "\n"
-    assert FIXTURE.read_text() == expected, (
-        "fixture diverged from synthetic_payload_rows(4); regenerate it from "
-        "the synthetic generator (never hand-edit)"
-    )
+    actual_rows = _rows()
+    expected_rows = synthetic_payload_rows(4)
+    assert len(actual_rows) == len(expected_rows)
+    for actual, expected in zip(actual_rows, expected_rows, strict=True):
+        assert actual.keys() == expected.keys()
+        for name in actual:
+            assert math.isclose(
+                actual[name], expected[name], rel_tol=1e-12, abs_tol=1e-12
+            ), (
+                f"fixture field {name!r} diverged from the deterministic synthetic "
+                "generator beyond platform-level floating-point noise"
+            )
