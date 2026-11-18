@@ -159,11 +159,23 @@ def test_python_matrix_keeps_uv_on_the_selected_interpreter():
     assert matrix_env["CURVE_SKIP_DOCKER_TESTS"] == "1"
 
 
-def test_python311_collects_coverage_without_rerunning_the_suite():
+def test_python_matrix_uses_one_full_suite_plus_targeted_compatibility_and_coverage():
     ci = _load(CI_PATH)
     steps = _steps(ci, "test")
     pytest_steps = [step for step in steps if "pytest -q" in step.get("run", "")]
-    assert len(pytest_steps) == 2, "one full-suite invocation is expected per matrix job"
+    assert len(pytest_steps) == 3
+    full_steps = [
+        step for step in pytest_steps
+        if step["run"].strip() == "uv run pytest -q"
+    ]
+    assert len(full_steps) == 1
+    assert "3.11" in full_steps[0].get("if", "")
+    compatibility_steps = [
+        step for step in pytest_steps
+        if "test_smoke_fixture.py" in step["run"] and "--cov" not in step["run"]
+    ]
+    assert len(compatibility_steps) == 1
+    assert "3.12" in compatibility_steps[0].get("if", "")
     coverage_steps = [step for step in pytest_steps if "--cov=curve_icon_dbso" in step["run"]]
     assert len(coverage_steps) == 1
     assert "3.11" in coverage_steps[0].get("if", "")

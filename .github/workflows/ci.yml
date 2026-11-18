@@ -51,16 +51,48 @@ jobs:
         run: uv python install ${{ matrix.python-version }} && uv sync --locked --extra dev --extra api
       - name: Lint
         run: uv run ruff check src tests scripts
-      - name: Run offline test suite (3.12; no private data required)
-        if: matrix.python-version == '3.12'
-        run: uv run pytest -q
-      - name: Run offline test suite with coverage (3.11)
+      - name: Run definitive full offline suite (3.11)
         if: matrix.python-version == '3.11'
-        run: uv run pytest -q --cov=curve_icon_dbso --cov-report=term-missing --cov-report=xml:coverage.xml
+        run: uv run pytest -q
+      - name: Run cross-version compatibility suite (3.12)
+        if: matrix.python-version == '3.12'
+        run: >-
+          uv run pytest -q
+          tests/test_alignment.py
+          tests/test_api_contract.py
+          tests/test_artifact.py
+          tests/test_bootstrap.py
+          tests/test_drift.py
+          tests/test_fold_local_preprocessing.py
+          tests/test_hfo.py
+          tests/test_kinematics.py
+          tests/test_metrics.py
+          tests/test_permutation.py
+          tests/test_protocol_contract.py
+          tests/test_schema.py
+          tests/test_smoke_fixture.py
+          tests/test_validation.py
+          tests/test_workflows.py
       - name: Synthetic end-to-end demo
         run: uv run python scripts/run_synthetic_demo.py --output-dir outputs/ci_demo
       - name: Lock-file consistency
         run: uv lock --check
+      - name: Targeted core coverage report (3.11)
+        if: matrix.python-version == '3.11'
+        run: >-
+          uv run pytest -q
+          tests/test_api_contract.py
+          tests/test_artifact.py
+          tests/test_bootstrap.py
+          tests/test_drift.py
+          tests/test_hfo.py
+          tests/test_kinematics.py
+          tests/test_metrics.py
+          tests/test_permutation.py
+          tests/test_schema.py
+          --cov=curve_icon_dbso
+          --cov-report=term-missing
+          --cov-report=xml:coverage.xml
       - name: Upload coverage artifact
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

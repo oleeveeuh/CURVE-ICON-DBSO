@@ -422,8 +422,10 @@ subject-cluster bootstrap (cluster integrity, determinism, hand-checked draws),
 the label-permutation null (block permutation, p-value convention), experiment
 lineage and provenance fingerprints, the optional XGBoost exercise, kinematic
 extraction on synthetic fixtures, policy-documentation checks, and an
-end-to-end determinism check. CI runs the suite on Python 3.11/3.12 from the
-committed lock file ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+end-to-end determinism check. CI runs the definitive full suite on Python 3.11,
+a focused numerical/API/contract compatibility suite on Python 3.12, and a
+targeted core coverage report from the committed lock file
+([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 ## Repository structure
 
