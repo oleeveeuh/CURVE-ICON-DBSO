@@ -38,6 +38,9 @@ jobs:
       # Keep every uv command in a matrix job on the selected interpreter;
       # otherwise `.python-version` makes later `uv run` steps fall back to 3.11.
       UV_PYTHON: ${{ matrix.python-version }}
+      # Docker integration has its own job below. Keep this matrix genuinely
+      # offline and avoid building the same image once per Python version.
+      CURVE_SKIP_DOCKER_TESTS: "1"
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install uv
@@ -48,15 +51,16 @@ jobs:
         run: uv python install ${{ matrix.python-version }} && uv sync --locked --extra dev --extra api
       - name: Lint
         run: uv run ruff check src tests scripts
-      - name: Run offline test suite (no private data required)
+      - name: Run offline test suite (3.12; no private data required)
+        if: matrix.python-version == '3.12'
         run: uv run pytest -q
+      - name: Run offline test suite with coverage (3.11)
+        if: matrix.python-version == '3.11'
+        run: uv run pytest -q --cov=curve_icon_dbso --cov-report=term-missing --cov-report=xml:coverage.xml
       - name: Synthetic end-to-end demo
         run: uv run python scripts/run_synthetic_demo.py --output-dir outputs/ci_demo
       - name: Lock-file consistency
         run: uv lock --check
-      - name: Coverage report (3.11 only, report printed + archived)
-        if: matrix.python-version == '3.11'
-        run: uv run pytest -q --cov=curve_icon_dbso --cov-report=term-missing --cov-report=xml:coverage.xml
       - name: Upload coverage artifact
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

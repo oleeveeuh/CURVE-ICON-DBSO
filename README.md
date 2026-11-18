@@ -411,6 +411,9 @@ runs retain the < 2 s target; CI uses a 10 s gross-regression ceiling because
 hosted-runner Docker scheduling is variable. The deployment benchmark remains
 the measured 0.85 s median on an idle environment
 ([docs/deployment_report.md](docs/deployment_report.md)).
+The Python-version matrix skips Docker integration because the dedicated
+container job already exercises it; Python 3.11 collects coverage during its
+single full-suite run rather than repeating the suite.
 
 Coverage includes: OOF alignment under nonsequential folds, subject-group
 integrity, fold-local fitting, hand-calculated metrics, HFO detection on synthetic

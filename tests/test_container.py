@@ -154,8 +154,10 @@ def test_dockerfile_builds_non_root_single_worker_readiness_checked_image():
 # ------------------------------------------------- docker-gated integration ---
 
 docker_available = shutil.which("docker") is not None
+docker_tests_enabled = os.environ.get("CURVE_SKIP_DOCKER_TESTS") != "1"
 requires_docker = pytest.mark.skipif(
-    not docker_available, reason="docker daemon not available on this machine"
+    not docker_available or not docker_tests_enabled,
+    reason="Docker integration is unavailable or owned by the dedicated CI job",
 )
 
 _IMAGE_SCAN_SCRIPT = """

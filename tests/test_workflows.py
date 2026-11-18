@@ -154,7 +154,19 @@ def test_ci_covers_the_required_phase3_gates():
 
 def test_python_matrix_keeps_uv_on_the_selected_interpreter():
     ci = _load(CI_PATH)
-    assert ci["jobs"]["test"]["env"]["UV_PYTHON"] == "${{ matrix.python-version }}"
+    matrix_env = ci["jobs"]["test"]["env"]
+    assert matrix_env["UV_PYTHON"] == "${{ matrix.python-version }}"
+    assert matrix_env["CURVE_SKIP_DOCKER_TESTS"] == "1"
+
+
+def test_python311_collects_coverage_without_rerunning_the_suite():
+    ci = _load(CI_PATH)
+    steps = _steps(ci, "test")
+    pytest_steps = [step for step in steps if "pytest -q" in step.get("run", "")]
+    assert len(pytest_steps) == 2, "one full-suite invocation is expected per matrix job"
+    coverage_steps = [step for step in pytest_steps if "--cov=curve_icon_dbso" in step["run"]]
+    assert len(coverage_steps) == 1
+    assert "3.11" in coverage_steps[0].get("if", "")
 
 
 def test_ci_container_job_runs_the_image_content_privacy_check():
