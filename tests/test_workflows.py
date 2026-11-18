@@ -170,6 +170,24 @@ def test_ci_container_job_runs_the_image_content_privacy_check():
     assert integration.get("env", {}).get("CURVE_COLD_START_LIMIT_SECONDS") == "10"
 
 
+def test_sbom_step_uses_supported_trivy_cyclonedx_inputs():
+    ci = _load(CI_PATH)
+    sbom = next(
+        step for step in _steps(ci, "container")
+        if "sbom" in step.get("name", "").lower()
+        and "trivy-action" in step.get("uses", "")
+    )
+    inputs = sbom["with"]
+    assert inputs["format"] == "cyclonedx"
+    assert inputs["output"] == "sbom.cdx.json"
+    assert "scanners" not in inputs, (
+        "Trivy rejects `scanners: none`; CycloneDX inventory needs no scanner override"
+    )
+    assert "list-all-pkgs" not in inputs, (
+        "Trivy only accepts list-all-pkgs with JSON; CycloneDX includes inventory"
+    )
+
+
 # ------------------------------------------------------------- deploy -----
 
 def test_deploy_builds_once_and_deploys_the_immutable_digest():

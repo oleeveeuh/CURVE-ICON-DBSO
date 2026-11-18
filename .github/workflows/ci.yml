@@ -107,8 +107,6 @@ jobs:
           image-ref: ${{ env.IMAGE_TAG }}
           format: cyclonedx
           output: sbom.cdx.json
-          list-all-pkgs: true
-          scanners: none
       # Vulnerability scan; the JSON report is gated by script so that
       # time-limited documented exceptions (CON-004) are the only bypass.
       - name: Vulnerability scan (report for gate)
