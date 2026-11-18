@@ -6,13 +6,14 @@
 # or pass -var state_bucket_name=... -var state_lock_table=... (see
 # docs/runbook.md). CI receives them from GitHub repository VARIABLES.
 
-environment          = "dev"
-aws_region           = "us-east-2" # the new-AWS-experience project Region (owner decision 2026-11-14; resources cannot be created elsewhere)
-owner                = "oleeveeuh"
-vpc_cidr             = "10.42.0.0/16"
-desired_count        = 0     # INF-007: zero when idle; deploys pass 1 explicitly
-enable_github_oidc   = false # new-AWS-experience SCP denies OIDC providers; deploys run locally (variables.tf)
-budget_monthly_limit = "20"
+environment        = "dev"
+aws_region         = "us-east-2" # the new-AWS-experience project Region (owner decision 2026-11-14; resources cannot be created elsewhere)
+owner              = "oleeveeuh"
+vpc_cidr           = "10.42.0.0/16"
+desired_count      = 0     # INF-007: zero when idle; deploys pass 1 explicitly
+enable_github_oidc = false # new-AWS-experience SCP denies OIDC providers; deploys run locally (variables.tf)
+# budget_monthly_limit moved to the retained bootstrap stack (2026-11-16):
+# it is a bootstrap variable now and must NOT appear in this file.
 
 # Budget recipient: set your real address here before any apply (the
 # deploy-workflow preflight blocks applies while any assignment still

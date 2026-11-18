@@ -252,6 +252,7 @@ def _run(
         n_recordings=int(len(cohort)),
         provenance=reporting.PROVENANCE_SYNTHETIC,
         cohort_note="(synthetic cohort — pipeline verification only)",
+        fold_strategy=describe_fold_strategy(int(groups.nunique())),
     ))
     print("\nOutputs written:")
     for label, path in paths.items():

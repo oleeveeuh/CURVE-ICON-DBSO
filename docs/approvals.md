@@ -48,8 +48,8 @@ mean approved, and no institutional approval is claimed or implied.
 | # | Former item | Why it no longer applies |
 |---|---|---|
 | 1 | PI scope approval (gated real-data work) | No PI and no institutional affiliation; scope is set by the project owner |
-| 2 | IRB / human-subjects determination | No human-subjects research is conducted; only legitimately public, non-identifying data may be used |
-| 3 | DUA permissions (former-lab USC DABI / ICON Lab data) | The former lab's DUA is not used and is not sought; the owner holds **independent authorization from the distributor** (attested 2026-11-16 — analysis and publication of findings authorized; the data itself is not redistributable) |
+| 2 | IRB / human-subjects determination | No institutional IRB exists for this independent project. (2026-11-16 correction: the earlier rationale — "only legitimately public, non-identifying data may be used" — was wrong on both counts: the DABI pilot collection is **controlled-access, not public**, and whether coded data are identifiable human-subject data depends on identifiability, which has **not** been formally determined here. See owner item 6 below and the [HHS coded-data guidance](https://www.hhs.gov/ohrp/coded-private-information-or-biospecimens-used-research.html).) |
+| 3 | DUA permissions (former-lab USC DABI / ICON Lab data) | The former lab's DUA is not used and is not sought; the owner holds **independent authorization from the distributor** (attested 2026-11-16 — analysis and publication of findings authorized; the data itself is not redistributable). DABI's own terms note users sign a DUA and providers may impose dataset-specific controls ([provider controls](https://dabi.loni.usc.edu/about/provider-controls), [FAQ](https://dabi.loni.usc.edu/about/faq)) — the exact dataset terms remain `TO BE VERIFIED` in the register and are never guessed |
 | 4 | Institutional AWS and security architecture | Only personal resources are used; no institutional account, system, or deployment exists |
 | 5 | Public release of cohort size and aggregate metrics (formerly PI-owned) | Publication of results is a project-owner decision |
 | 6 | Real-data model explanations (formerly PI/IRB/DUA-owned) | Explanations may be computed from lawful data at the owner's discretion (see ADR-002 for the synthetic-only public rule) |
@@ -81,6 +81,19 @@ or documentation — they never prevent any work:
    institutional resources, or institutional affiliation are ever
    introduced, revisit this page and the applicable external
    requirements at that time — as a documentation update, not a gate.
+6. **Identifiability and attribution record (added 2026-11-16
+   pre-publication review).** Before any public release of results,
+   obtain and record: (a) a **written identifiability determination**
+   for the coded data — independent-research status alone does not
+   settle whether coded data are identifiable human-subject data; it
+   turns on whether identities are readily ascertainable ([HHS coded-data
+   guidance](https://www.hhs.gov/ohrp/coded-private-information-or-biospecimens-used-research.html));
+   (b) the **precise dataset accession/DOI**, verbatim **license/DUA
+   terms**, and **publication conditions**, taken from the distributor's
+   own pages/agreement into the register
+   ([`docs/data_access.md`](data_access.md)) — `UNKNOWN` fields stay
+   `UNKNOWN` until the source is at hand, and this remains guidance,
+   never a gate.
 
 Additional standing rules for this file:
 

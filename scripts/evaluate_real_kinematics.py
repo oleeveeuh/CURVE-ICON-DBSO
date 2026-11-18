@@ -95,8 +95,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage", choices=("exploratory", "confirmatory"),
                         required=True, help="Analysis stage label (SCI-011)")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--permutations", type=int, default=200,
-                        help="SCI-009 protocol default: 200")
+    parser.add_argument("--permutations", type=int, default=1000,
+                        help="Minimum when a tail probability will be "
+                             "reported: 1000 (SCI-009 floor is 200)")
     parser.add_argument("--bootstrap-resamples", type=int, default=2000,
                         help="SCI-008 protocol default: 2000")
     parser.add_argument("--with-xgboost", action="store_true",

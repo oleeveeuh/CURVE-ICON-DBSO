@@ -52,11 +52,19 @@ def format_summary(
     n_recordings: int,
     provenance: str,
     cohort_note: str = "",
+    fold_strategy: str | None = None,
 ) -> str:
-    """Human-readable summary text with the small-sample caveat up front."""
+    """Human-readable summary text with the small-sample caveat up front.
+
+    ``fold_strategy`` names the splitter actually used (e.g. the
+    :func:`curve_icon_dbso.evaluation.describe_fold_strategy` string) —
+    the header must never claim a fold scheme the run didn't use
+    (2026-11-16 review: the 31-subject run is 5-fold GroupKFold, not LOSO).
+    """
     lines = [
         "=" * 72,
-        "SUBJECT-GROUPED EVALUATION SUMMARY (leave-one-subject-out)",
+        "SUBJECT-GROUPED EVALUATION SUMMARY "
+        f"({fold_strategy or 'subject-grouped cross-validation'})",
         "=" * 72,
         f"Data provenance : {provenance}",
         f"Cohort          : {n_subjects} unique subjects, {n_recordings} recordings",
@@ -127,7 +135,9 @@ def save_outputs(
     summary_json = {
         "data_provenance": provenance,
         "intended_use": "exploratory research prototype; NOT for clinical use",
-        "evaluation": "leave-one-subject-out cross-validation",
+        # Never claim a fold scheme the run didn't use: the label follows
+        # the fold_strategy the caller recorded (2026-11-16 review).
+        "evaluation": fold_strategy or "subject-grouped cross-validation",
         "analysis_stage": analysis_stage,
         "n_subjects": n_subjects,
         "n_recordings": n_recordings,

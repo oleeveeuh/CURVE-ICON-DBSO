@@ -3,6 +3,9 @@
 Creates the Terraform **remote state backend** required by INF-006: a
 versioned, encrypted, private S3 bucket plus a DynamoDB lock table
 (ADR-005 decision: the bootstrap is created in Phase 4; nothing pre-existed).
+Since 2026-11-16 it also hosts the **persistent monthly budget** (INF-008),
+moved out of the application stack so a destroy can never remove the cost
+guardrail while retained resources remain.
 
 This stack's own state stays **local** (gitignored via the repo-wide
 `*.tfstate` rules) and is **intentionally retained**: deleting it would
@@ -28,10 +31,10 @@ cd infra/bootstrap
 # ✅ SAFE: format and preview
 terraform fmt -check -recursive
 terraform init                      # local state (no backend needed here)
-terraform plan -var owner=oleeveeuh
+terraform plan -var owner=oleeveeuh -var budget_alert_email=you@example.com
 
-# ⚠️ MUTATING: create the state bucket + lock table (one-time)
-terraform apply -var owner=oleeveeuh
+# ⚠️ MUTATING: create the state bucket + lock table + persistent budget (one-time)
+terraform apply -var owner=oleeveeuh -var budget_alert_email=you@example.com
 
 # Record the outputs — they feed the main module and CI:
 terraform output state_bucket_name   # -> -backend-config bucket=... AND -var state_bucket_name=...

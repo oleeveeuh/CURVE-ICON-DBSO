@@ -11,3 +11,8 @@ output "lock_table_name" {
   description = "DynamoDB table for state locking. Feed to -backend-config dynamodb_table=... and -var state_lock_table=..."
   value       = aws_dynamodb_table.state_locks.name
 }
+
+output "budget_name" {
+  description = "Persistent monthly cost budget with $5/$20 notifications (INF-008) — retained across application-stack destroys (2026-11-16)."
+  value       = aws_budgets_budget.monthly_cost.name
+}

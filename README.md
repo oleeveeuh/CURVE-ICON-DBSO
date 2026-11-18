@@ -145,6 +145,8 @@ exactly 8 held-out predictions. R² and correlation are highly unstable at this 
 retracted; their figures are archived under
 [`figures/archive/`](figures/archive/README.md) as documentation of the defect.
 
+**Follow-on three-arm study (frozen contract v1.0.0 → corrective v1.0.1, 2026-11-18):** a fully negative, exploratory result under the complete frozen matrix — **global null**: no subject-level block × model met the promotion rule (ten-test Holm family minimum adjusted p = 1.0); MOVE methodology transfer **NOT successful** (median r ≈ .06 with CI [.036, .109], but decoder MAE .721 vs persistence .282 and block-mean .629 — criterion failed in code); corrected circular and blockwise shift nulls both p = .002 (small above-null alignment, far below naive temporal references); DMD did not improve correlation over band power. The v1.0.0 run's partial verdicts are superseded by this corrective rerun (identical inputs, manifest-verified); sanitized aggregates: [`docs/results_followon_real.md`](docs/results_followon_real.md).
+
 What *is* verifiable is the machinery, on synthetic data
 (`figures/synthetic_oof_verification.png`; regenerate with the quick start below —
 seeded, byte-identical across runs):
@@ -298,7 +300,8 @@ coverage, secret + subject-identifier scanning, a real container build with
 SBOM generation and an exceptions-aware HIGH/CRITICAL vulnerability gate
 ([docs/vulnerability-exceptions.yml](docs/vulnerability-exceptions.yml)),
 the image-content privacy check, and Terraform format/validate/lint/security
-scans — plus a read-only Terraform plan on same-repository PRs
+scans — plus a read-only Terraform plan on same-repository PRs, which runs
+only when the `OIDC_ENABLED` repository variable is explicitly `true`
 ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
 The deployment path ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
@@ -310,7 +313,8 @@ applies Terraform, waits for ECS stability, and smoke-tests through the
 ingress. The environment itself is
 Terraform-managed ([infra/](infra/)): CloudFront (default
 `*.cloudfront.net` TLS) → ALB (locked to CloudFront) → ECS Fargate,
-versioned private artifact bucket, budgets at $5/$20, scale-to-zero by
+versioned private artifact bucket, a persistent monthly budget in the
+retained bootstrap stack, scale-to-zero by
 default. Decisions: [ADR-004](docs/decisions/ADR-004-public-ingress-and-tls.md),
 [ADR-005](docs/decisions/ADR-005-terraform-organization.md).
 
@@ -319,11 +323,16 @@ default. Decisions: [ADR-004](docs/decisions/ADR-004-public-ingress-and-tls.md),
 environment was deployed once, verified end to end, put through the
 Phase 5 exercises, and then **destroyed** — it is ephemeral by design
 (destroy-between-milestones), and the teardown orphan check came back
-empty. Account constraint observed and worked around: this project's
+empty. **Honest OIDC claim (2026-11-16 review):** the GitHub Actions
+OIDC deployment infrastructure was authored, and deployment was
+validated through **local Terraform applies**; no keyless
+GitHub → AWS deployment has completed in this account, so OIDC remains
+explicitly **unverified** until one succeeds in an account that permits
+the provider. Account constraint observed: this project's
 AWS account is a new-AWS-experience project account whose managed SCP
 denies `iam:CreateOpenIDConnectProvider`, so the OIDC deploy path
 cannot run here — deploys for this account are local (`enable_github_oidc
-= false`); the workflows remain valid for standard accounts. Bootstrap,
+= false`). Bootstrap,
 apply, verify, rollback, scale-to-zero, destroy, alarm triage, load
 test, and the orphan check are documented step by step in
 [docs/runbook.md](docs/runbook.md), with safe/mutating/destructive

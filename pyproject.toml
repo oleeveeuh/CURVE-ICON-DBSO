@@ -57,6 +57,9 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "slow: expensive protocol-level checks (full permutation floor); safe to deselect locally with -m 'not slow'",
+]
 
 [tool.ruff]
 line-length = 100

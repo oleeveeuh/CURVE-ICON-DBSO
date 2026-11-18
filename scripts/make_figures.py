@@ -278,8 +278,12 @@ def main() -> int:
     figures_dir.mkdir(exist_ok=True)
 
     results, n_subjects, n_recordings = run_synthetic_evaluation()
+    from curve_icon_dbso.evaluation import describe_fold_strategy
+
     print(reporting.format_summary(results, n_subjects, n_recordings,
-                                   reporting.PROVENANCE_SYNTHETIC))
+                                   reporting.PROVENANCE_SYNTHETIC,
+                                   cohort_note="(synthetic cohort — pipeline verification only)",
+                                   fold_strategy=describe_fold_strategy(n_subjects)))
 
     figure_architecture(figures_dir / "pipeline_architecture.png")
     figure_cohort_flow(figures_dir / "cohort_modality_flow.png")

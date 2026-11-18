@@ -25,6 +25,11 @@ Exclusions are printed explicitly with reasons and never silent: a
 subject folder without the standard .mat, a subject missing from the
 workbook, missing/NaN covariates, or no ECoG strip channels. The
 original data files are only ever read.
+
+**Log hygiene (2026-11-16 review):** console output names recordings by
+ORDINAL run label (``recording #001`` … in sorted folder order), never
+by subject code — the returned summary DataFrame keeps the real subject
+column in memory for local bookkeeping, but no log line names a subject.
 """
 
 from __future__ import annotations
@@ -121,18 +126,20 @@ def load_recording(mat_path: Path) -> tuple[list[str], np.ndarray, float, np.nda
 
 
 def load_covariates(workbook: Path, subject: str) -> dict[str, float]:
-    sheet1 = pd.ExcelFile(workbook).parse("Sheet1")
+    # Error messages are deliberately subject-FREE: the caller's log line
+    # carries an ordinal run label, never the code.
+    sheet1 = pd.read_excel(workbook, sheet_name="Sheet1")
     rows = sheet1.loc[sheet1["SUBJECT"].astype(str) == subject]
     if rows.empty:
-        raise CurveIconError(f"{subject}: no row in the localization workbook")
+        raise CurveIconError("no row in the localization workbook")
     first = rows.iloc[0]
     values: dict[str, float] = {}
     for name, column in WORKBOOK_COLUMNS.items():
         if column not in sheet1.columns:
-            raise CurveIconError(f"{subject}: workbook column '{column}' missing")
+            raise CurveIconError(f"workbook column '{column}' missing")
         value = pd.to_numeric(first[column], errors="coerce")
         if not np.isfinite(value):
-            raise CurveIconError(f"{subject}: covariate '{column}' is missing/NaN")
+            raise CurveIconError(f"covariate '{column}' is missing/NaN")
         values[name] = float(value)
     return values
 
@@ -151,8 +158,11 @@ def convert(raw_dir: Path, workbook: Path, output_dir: Path) -> pd.DataFrame:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     summary_rows = []
+    ordinal = 0
     for subject_dir in sorted(p for p in raw_dir.iterdir() if p.is_dir()):
         subject = subject_dir.name
+        ordinal += 1
+        label = f"recording #{ordinal:03d}"  # logs never carry the subject code
         mat_path = subject_dir / STANDARD_MAT
         try:
             if not mat_path.is_file():
@@ -162,7 +172,7 @@ def convert(raw_dir: Path, workbook: Path, output_dir: Path) -> pd.DataFrame:
             )
             covariates = load_covariates(Path(workbook), subject)
         except CurveIconError as exc:
-            print(f"EXCLUDED: {subject} — {exc}")
+            print(f"EXCLUDED: {label} — {exc}")
             continue
 
         npz_path = output_dir / f"{subject}.npz"
@@ -179,7 +189,7 @@ def convert(raw_dir: Path, workbook: Path, output_dir: Path) -> pd.DataFrame:
         n_blocks = int(segs.shape[0])
         n_move = int((segs[:, 3] == 1).sum())
         print(
-            f"wrote {npz_path}: ecog={ecog.shape} {ecog_labels}, "
+            f"wrote {label}: ecog={ecog.shape} {ecog_labels}, "
             f"glove={glove.shape}, segs={n_blocks} blocks ({n_move} MOVE), "
             f"fs={fs_ecog:g}/{fs_glove:g}"
         )

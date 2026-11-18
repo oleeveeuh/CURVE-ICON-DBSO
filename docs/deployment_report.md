@@ -44,7 +44,7 @@ scientific result of any kind.**
 | Containerized cold start | **0.85 s median** | repeated fresh-task first-`/ready` timing |
 | Local dev-machine cold start (non-container) | 1.15 s median | [api.md](api.md) §9 |
 
-## 3. Load test (OBS-003/OBS-004) — 2026-11-15, known-good digest throughout
+## 3. Load test (OBS-003/OBS-004) — 2026-11-15, known-good digest throughout (50 RPS acceptance NOT reached — see note below)
 
 Profile: `locust/locustfile.py` shape — ramp 1→50 concurrent users over
 5 minutes, sustain 50 for 10 minutes (~1 request/s/user ⇒ users ≈ RPS);
@@ -60,9 +60,17 @@ only — no payloads).
 | Median response time | 88 ms | — | — |
 | **p95** | **110 ms** | < 200 ms | **PASS** |
 | Max | 350 ms | — | — |
-| Peak sustained throughput | ~38 req/s at 50 users | 50 RPS shape | within shape pacing |
+| Peak sustained throughput | ~38 req/s at 50 users | 50 measured RPS | **NOT REACHED — see below** |
 | Task restarts during run | **0** | 0 | **PASS** |
 | ECS memory | flat ≈ 24 % utilization for the whole run | stable | **PASS** |
+
+**Throughput honesty note (2026-11-16 review):** the ramp shape tops out
+at ~1 request/s/user, so 50 users produced ~38 measured req/s — the
+**50 req/s acceptance target was not reached** by this run. The
+excellent p95 (110 ms) and zero failures are valid *at the measured
+load only* and do not establish performance at 50 RPS. Remaining work:
+a constant-throughput Locust profile that sustains ≥ 50 **measured**
+RPS for the planned duration, rerun against a fresh deployment.
 
 Per-endpoint p95: `POST /predict` (27,362 req) 110 ms; `GET /ready`
 (6,765 req) 110 ms.

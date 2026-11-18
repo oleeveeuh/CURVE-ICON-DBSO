@@ -93,18 +93,28 @@ generation. Facts are never guessed — an unfilled field stays
 
 ## Privacy rules observed in this repository
 
-- Subject codes must not appear in committed files. (Subject-code
-  strings from the pre-refactor scripts exist **in git history only** —
-  early October 2026 commits at the repository root — retained as
-  evidence of the random placeholder-data fallback; no clinical values
-  are attached to them. The current `legacy/` scripts use a `SUBJ_CODE`
-  column placeholder instead, and history is deliberately not rewritten:
-  see [data_access.md](data_access.md) "Incident-response trigger" and
-  the publication scan before any public release.)
+- Subject codes must not appear in committed files — and since the
+  2026-11-16 pre-publication review this rule is **enforced, not
+  advisory**: `scripts/security_scan.py` treats subject-identifier
+  matches and non-allowlisted data/model/database file types as
+  **blocking** findings (exit 1) on every CI push and pull request, so
+  PR content is gated by the whole-tree scan before merge. Conversion
+  and inspection scripts print ordinal or one-way-hashed run labels,
+  never subject codes. (Subject-code strings from the pre-refactor
+  scripts exist **in git history only** — early October 2026 commits at
+  the repository root — retained as evidence of the random
+  placeholder-data fallback; no clinical values are attached to them.
+  Additionally recorded 2026-11-16: commit `493b9a6`'s MESSAGE names the
+  one excluded subject's code in its exclusion note. Rewriting shared
+  history is disruptive; the removal-vs-retain decision is a separate,
+  explicit owner decision before any public release — until then the
+  publication scan must check history, not just the working tree.)
 - No dates, records, imaging metadata, or intermediate datasets are
   tracked.
 - `data/` and `outputs/` are gitignored; `*.csv`, `*.mat`, and raw
-  imaging formats are blocked repo-wide.
+  imaging formats are blocked repo-wide (and now fail the scanner
+  unless a specific path is explicitly allowlisted in
+  `scripts/security_scan.py` `DATA_FILE_ALLOWLIST`).
 
 ## Two-track boundary
 
@@ -154,7 +164,7 @@ attribution requirements allow:
   in-repository locations are the gitignored `data/` and `outputs/`
   directories (gitignore keeps them out of version control; anything
   not matching the ignore rules will be flagged by the scanner as a
-  non-blocking notice).
+  blocking finding — data files never belong in the public track).
 - **External per-subject outputs:** the same designated gitignored
   directories (`outputs/`, `artifacts/`) or any local path; they are
   simply never committed.

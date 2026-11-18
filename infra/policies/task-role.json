@@ -2,39 +2,6 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "ReadVersionedSyntheticArtifact",
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:GetObjectVersion"
-      ],
-      "Resource": [
-        "${artifact_bucket_arn}/${artifact_prefix}/*"
-      ]
-    },
-    {
-      "Sid": "ListVersionedSyntheticArtifactPrefix",
-      "Effect": "Allow",
-      "Action": "s3:ListBucket",
-      "Resource": "${artifact_bucket_arn}",
-      "Condition": {
-        "StringLike": {
-          "s3:prefix": "${artifact_prefix}/*"
-        }
-      }
-    },
-    {
-      "Sid": "PutMetadataOnlyDemoMetrics",
-      "Effect": "Allow",
-      "Action": "cloudwatch:PutMetricData",
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "cloudwatch:namespace": "${metrics_namespace}"
-        }
-      }
-    },
-    {
       "Sid": "DenyArtifactWrites",
       "Effect": "Deny",
       "Action": [

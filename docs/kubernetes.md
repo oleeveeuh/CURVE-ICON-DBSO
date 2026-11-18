@@ -156,8 +156,10 @@ verify, or cost the demonstration.
 
 No EKS/GKE/AKS or any cloud Kubernetes resource was created: this phase
 ran entirely against a local `kind` cluster on the existing local Docker
-engine (colima). `kubectl config current-context` reads
-`kind-curve-icon-dbso`; the AWS account contains no Kubernetes resource
-(the EKS API was never called; the only retained AWS resources remain
-the Terraform remote-state bucket + lock table from the Phase 5
-teardown).
+engine (colima). During the run `kubectl config current-context` read
+`kind-curve-icon-dbso`; that cluster and its context were **removed at
+teardown** (§3), so no `kind-*` context exists now. The AWS account
+contains no Kubernetes resource (the EKS API was never called; the
+retained AWS resources remain the Terraform remote-state bucket + lock
+table from the Phase 5 teardown, plus — since 2026-11-16 — the
+persistent budget in the retained bootstrap stack).

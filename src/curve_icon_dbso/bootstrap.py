@@ -15,7 +15,11 @@ Uncertainty quantification (SCI-008, SCI-009) — and its limits:
   intervals describe this cohort and must not be read as population
   statements.
 * Permutation: at least 200 subject-level target permutations through the
-  complete grouped-CV workflow. The p-value convention is the conservative
+  complete grouped-CV workflow — at least 1,000 whenever a tail
+  probability will actually be reported. Each permutation's null
+  statistic is scored against that permutation's **own permuted targets**
+  (held-out rows included), never against the original targets. The
+  p-value convention is the conservative
   ``p = (1 + #{null at least as favorable as observed}) / (1 + n_permutations)``
   (never returns zero, no anti-conservative small-count behavior).
   Results are **descriptive**, not confirmatory hypothesis tests, at
@@ -39,10 +43,12 @@ from .errors import DataValidationError
 
 # Protocol defaults (SCI-008 / SCI-009). Tests and the synthetic demo may
 # use smaller counts for speed; real evaluation runs must use >= 2,000
-# bootstrap resamples and >= 200 permutations.
+# bootstrap resamples and >= 200 permutations — and >= 1,000 permutations
+# whenever a tail probability will be reported (pre-publication review,
+# 2026-11-16; the corrected real-data rerun uses 5,000).
 BOOTSTRAP_N_RESAMPLES = 2000
 BOOTSTRAP_SEED = 42
-PERMUTATION_N_PERMUTATIONS = 200
+PERMUTATION_N_PERMUTATIONS = 1000
 PERMUTATION_SEED = 42
 CI_LEVEL = 0.95
 
@@ -301,6 +307,30 @@ def permutation_p_value(
     return float((1 + count) / (1 + n_permutations))
 
 
+def holm_adjusted_pvalues(pvalues: dict[str, float]) -> dict[str, float]:
+    """Holm–Bonferroni step-down adjustment (family-wise error control).
+
+    An exploratory screen inspects several models and metrics; one nominal
+    ``p < .05`` among many inspected tests is the classic multiplicity
+    trap. The documented remedy: define the family actually inspected and
+    report step-down adjusted p-values alongside the raw ones.
+
+    Deterministic: ties are broken by first appearance in ``pvalues``
+    (Python sorts are stable). Adjusted values are non-decreasing in the
+    sorted raw values, never below their raw value, and capped at 1.0.
+    """
+    if not pvalues:
+        return {}
+    ordered = sorted(pvalues.items(), key=lambda item: item[1])
+    m = len(ordered)
+    adjusted: dict[str, float] = {}
+    running_max = 0.0
+    for position, (name, raw) in enumerate(ordered):
+        running_max = max(running_max, (m - position) * raw)
+        adjusted[name] = min(1.0, float(running_max))
+    return adjusted
+
+
 def run_permutation_null(
     X,
     y: np.ndarray,
@@ -314,12 +344,16 @@ def run_permutation_null(
 ) -> dict[str, dict[str, PermutationMetricResult]]:
     """Label-permutation null through the complete grouped-CV workflow (SCI-009).
 
-    For each of ``n_permutations`` (>= 200 for real evaluation runs) the
-    targets are permuted at the subject level and the **complete** grouped
+    For each of ``n_permutations`` (>= 200 for real evaluation runs, and
+    >= 1,000 when a tail probability will be reported) the targets are
+    permuted at the subject level and the **complete** grouped
     cross-validation — same folds, fold-local preprocessing, aligned
-    out-of-fold predictions — is rerun for every model. The observed
-    metrics (from an unpermuted run of the same machinery) are compared
-    against each null distribution with the conservative
+    out-of-fold predictions — is rerun for every model. Each permutation's
+    null statistic is computed against that permutation's **permuted**
+    targets, held-out rows included (mirroring sklearn's
+    ``permutation_test_score``) — never against the original targets.
+    The observed metrics (from an unpermuted run of the same machinery)
+    are compared against each null distribution with the conservative
     :func:`permutation_p_value` convention.
 
     Folds are computed once and reused across permutations: permutations
@@ -328,6 +362,9 @@ def run_permutation_null(
     Returns ``{model_name: {metric: PermutationMetricResult}}``. Determinism:
     fixed seed, single generator, fixed permutation order.
     """
+    from sklearn.base import clone
+    from sklearn.pipeline import Pipeline
+
     from .evaluation import compute_regression_metrics, run_group_cv
 
     for metric in metrics:
@@ -368,15 +405,20 @@ def run_permutation_null(
             # fold-local pipeline fit, write-back at original indices.
             n = len(X)
             oof = np.full(n, np.nan)
-            from sklearn.base import clone
-            from sklearn.pipeline import Pipeline
 
             for train_idx, test_idx in splits:
                 steps = [(name, clone(step)) for name, step in preprocessing]
                 pipe = Pipeline([*steps, ("model", clone(model))])
                 pipe.fit(X.iloc[train_idx], y_perm[train_idx])
                 oof[test_idx] = pipe.predict(X.iloc[test_idx])
-            perm_metrics = compute_regression_metrics(y, oof)
+            # The null is the CV score OF the permuted problem: score the
+            # out-of-fold predictions against this permutation's own
+            # (permuted) targets. Scoring against the original y instead
+            # would measure residual label agreement, not the null
+            # distribution, and invalidate every p-value (regression test:
+            # tests/test_permutation.py::test_permutation_null_scores_...
+            # against_permuted_targets).
+            perm_metrics = compute_regression_metrics(y_perm, oof)
             for metric in metrics:
                 nulls[model_name][metric].append(float(perm_metrics[metric]))
 

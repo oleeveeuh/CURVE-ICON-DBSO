@@ -47,7 +47,15 @@ def _policy(name: str, substitutions: dict[str, str] | None = None) -> dict:
     return json.loads(text)
 
 
-@pytest.mark.parametrize("name", ["ci-apply-policy.json", "ci-plan-policy.json", "task-role.json"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "ci-apply-policy.json",
+        "ci-plan-policy.json",
+        "task-role.json",
+        "permissions-boundary.json",
+    ],
+)
 def test_policies_carry_no_legacy_comment_element(name):
     """The new-AWS-experience IAM endpoint REJECTS identity policies that
     combine the legacy top-level 'Comment' element with multiple statements
@@ -81,30 +89,38 @@ def _as_list(value) -> list:
 # ------------------------------------------------------------ task role ---
 
 
-def test_task_role_reads_only_the_synthetic_artifact_prefix():
+def test_task_role_carries_no_allow_statements():
+    """The API loads its synthetic artifact from the image filesystem and
+    touches no AWS service at request time (2026-11-16 review: S3 and
+    custom-metric permissions removed because they were unused). The task
+    role therefore carries ONLY explicit Deny guardrails."""
     policy = _policy("task-role.json")
-    for stmt in _statements(policy):
-        if stmt.get("Effect") != "Allow" or "s3:GetObject" not in _as_list(
-            stmt.get("Action", [])
-        ):
-            continue
-        for resource in _as_list(stmt.get("Resource", [])):
-            assert resource.endswith("/${artifact_prefix}/*"), (
-                f"task-role s3 read is not scoped to the synthetic artifact prefix: {resource}"
-            )
+    allows = _allow_actions(policy)
+    assert not allows, f"task role must carry no Allow actions, got: {sorted(allows)}"
+    denied = {
+        action
+        for stmt in _statements(policy)
+        if stmt.get("Effect") == "Deny"
+        for action in _as_list(stmt.get("Action", []))
+    }
+    for expected in (
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:DeleteBucket",
+        "secretsmanager:GetSecretValue",
+        "ssm:GetParameter",
+    ):
+        assert expected in denied, f"task role must explicitly deny {expected}"
 
 
 def test_task_role_metric_writes_are_namespace_bound():
+    """Retired permission (2026-11-16 review): the API never emits custom
+    metrics, so NO PutMetricData statement may exist at all."""
     policy = _policy("task-role.json")
     metric_stmts = [
         s for s in _statements(policy) if "cloudwatch:PutMetricData" in _as_list(s.get("Action", []))
     ]
-    assert len(metric_stmts) == 1, "exactly one PutMetricData statement expected"
-    stmt = metric_stmts[0]
-    assert stmt.get("Condition", {}).get("StringEquals", {}).get(
-        "cloudwatch:namespace"
-    ) == "${metrics_namespace}", "PutMetricData must be bound to the project namespace"
-    assert stmt.get("Resource") == "*", "PutMetricData is account-global by AWS design"
+    assert not metric_stmts, "PutMetricData was removed and must not come back"
 
 
 def test_task_role_denies_artifact_writes_and_secret_stores():
@@ -169,16 +185,124 @@ def test_plan_role_reads_state_and_managed_services_only():
 # ----------------------------------------------------------- apply role ---
 
 
-def test_apply_role_passrole_is_constrained_to_project_roles():
+def test_apply_role_passrole_is_constrained_to_project_roles_and_ecs():
     policy = _policy("ci-apply-policy.json")
     passrole_stmts = [
         s for s in _statements(policy) if "iam:PassRole" in _as_list(s.get("Action", []))
     ]
     assert len(passrole_stmts) == 1, "exactly one PassRole statement expected"
-    resource = _as_list(passrole_stmts[0].get("Resource", []))[0]
-    assert re.fullmatch(r"arn:aws:iam::\*:role/\$\{name_prefix\}-\*", resource), (
-        f"PassRole must be constrained to project-named roles, got: {resource}"
+    stmt = passrole_stmts[0]
+    resource = _as_list(stmt.get("Resource", []))[0]
+    assert re.fullmatch(r"arn:aws:iam::\*:role/\$\{name_prefix\}/\*", resource), (
+        f"PassRole must be constrained to project-path roles, got: {resource}"
     )
+    assert stmt.get("Condition", {}).get("StringEquals", {}).get(
+        "iam:PassedToService"
+    ) == "ecs-tasks.amazonaws.com", (
+        "PassRole must only be delegatable to the ECS task service"
+    )
+
+
+def test_apply_role_cannot_create_oidc_providers():
+    """OIDC-provider management is a one-time bootstrap/owner action, never
+    routine CI (2026-11-16 review); the account SCP denies it regardless."""
+    actions = _allow_actions(_policy("ci-apply-policy.json"))
+    leaks = [a for a in actions if "OpenIDConnectProvider" in a]
+    assert not leaks, f"apply role must not manage OIDC providers: {leaks}"
+
+
+def test_apply_role_creates_roles_only_with_the_documented_boundary():
+    policy = _policy("ci-apply-policy.json")
+    stmt = next(
+        s for s in _statements(policy) if s.get("Sid") == "CreateProjectRolesWithBoundary"
+    )
+    actions = set(_as_list(stmt.get("Action", [])))
+    assert {"iam:CreateRole", "iam:PutRolePermissionsBoundary"} <= actions
+    for resource in _as_list(stmt.get("Resource", [])):
+        assert resource == "arn:aws:iam::*:role/${name_prefix}/*", (
+            f"bounded role creation must be path-scoped: {resource}"
+        )
+    assert stmt["Condition"]["StringEquals"]["iam:PermissionsBoundary"] == (
+        "${permissions_boundary_arn}"
+    ), "CreateRole must be conditioned on the exact documented boundary ARN"
+
+
+def test_apply_role_attaches_only_the_documented_managed_policy():
+    policy = _policy("ci-apply-policy.json")
+    stmt = next(
+        s
+        for s in _statements(policy)
+        if s.get("Sid") == "AttachOnlyDocumentedManagedPolicies"
+    )
+    for resource in _as_list(stmt.get("Resource", [])):
+        assert resource == (
+            "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ), f"managed-policy attachment must be pinned to the exact ARN: {resource}"
+
+
+def test_iam_role_management_is_path_scoped():
+    """DeleteRole/trust-policy edits/inline-policy edits must be limited to
+    the project role path — no account-wide role management."""
+    policy = _policy("ci-apply-policy.json")
+    stmt = next(
+        s for s in _statements(policy) if s.get("Sid") == "ManageProjectIamRoles"
+    )
+    for resource in _as_list(stmt.get("Resource", [])):
+        assert resource == "arn:aws:iam::*:role/${name_prefix}/*", (
+            f"role management must be path-scoped: {resource}"
+        )
+
+
+def test_permissions_boundary_denies_identity_escalation():
+    """The Deny-only boundary caps every project role: no IAM user or
+    credential lifecycle, no OIDC-provider management, no organizations or
+    account management — regardless of what any policy grants."""
+    policy = _policy("permissions-boundary.json")
+    deny_stmts = [s for s in _statements(policy) if s.get("Effect") == "Deny"]
+    assert deny_stmts, "boundary must carry at least one Deny statement"
+    allow_actions = _allow_actions(policy)
+    assert not allow_actions, "boundary must be Deny-only"
+    denied = {
+        action
+        for stmt in deny_stmts
+        for action in _as_list(stmt.get("Action", []))
+    }
+    for expected in (
+        "iam:CreateUser",
+        "iam:CreateAccessKey",
+        "iam:CreateLoginProfile",
+        "iam:AttachUserPolicy",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:DeleteOpenIDConnectProvider",
+        "organizations:*",
+        "account:*",
+    ):
+        assert expected in denied, f"boundary must deny {expected}"
+
+
+def test_iam_tf_wires_boundary_and_role_paths():
+    """Every project role in iam.tf must sit on the project path and carry
+    the permissions boundary; the apply policy must receive the boundary
+    ARN placeholder."""
+    iam_text = (REPO_ROOT / "infra" / "iam.tf").read_text()
+    role_names = ("ecs_execution", "ecs_task", "gha_plan", "gha_apply", "gha_push")
+    for role in role_names:
+        block_match = re.search(
+            rf'resource "aws_iam_role" "{role}" \{{(.*?)\n}}', iam_text, re.DOTALL
+        )
+        assert block_match, f"iam.tf is missing the {role} role block"
+        block = block_match.group(1)
+        assert re.search(r'path\s*=\s*"/\$\{local\.name_prefix\}/"', block), (
+            f"{role} must be created on the project role path"
+        )
+        assert re.search(
+            r"permissions_boundary\s*=\s*aws_iam_policy\.project_permissions_boundary\.arn",
+            block,
+        ), f"{role} must carry the permissions boundary"
+    assert re.search(
+        r"permissions_boundary_arn\s*=\s*aws_iam_policy\.project_permissions_boundary\.arn",
+        iam_text,
+    ), "the apply policy template must receive the boundary ARN"
 
 
 def test_apply_role_cannot_delete_or_repolicy_the_state_store():

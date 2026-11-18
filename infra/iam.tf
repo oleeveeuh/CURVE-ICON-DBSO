@@ -4,6 +4,16 @@
 # ref / protected environment (ADR-005). The policy documents live in
 # infra/policies/*.json so the offline least-privilege tests
 # (tests/test_iam_policy_scope.py) can assert their scoping without AWS.
+#
+# 2026-11-16 pre-publication review hardening: every project role is
+# created on a role PATH with the permissions boundary
+# (infra/policies/permissions-boundary.json — denies IAM user/credential
+# lifecycle, OIDC-provider management, organizations and account
+# management). Routine CI can never create OIDC providers: those actions
+# are absent from infra/policies/ci-apply-policy.json (provider creation
+# is a deliberate one-time owner-run action, e.g. from bootstrap, never
+# part of routine deployment). Roles live on their path so every IAM
+# resource constraint in the apply policy is path-scoped.
 
 # Required by the OIDC trust principal ARN; interpolated at plan/apply time,
 # never committed (the acceptance rule: no account IDs in the repository).
@@ -29,6 +39,14 @@ resource "aws_iam_openid_connect_provider" "github" {
   tags = { Name = "${local.name_prefix}-github-oidc" }
 }
 
+# Permissions boundary (2026-11-16 review): caps what ANY project role can
+# ever do, regardless of which policy grants what. Deny-only boundary —
+# see infra/policies/permissions-boundary.json and the offline tests.
+resource "aws_iam_policy" "project_permissions_boundary" {
+  name   = "${local.name_prefix}-permissions-boundary"
+  policy = templatefile("${path.module}/policies/permissions-boundary.json", {})
+}
+
 # --- ECS roles ---------------------------------------------------------------
 
 data "aws_iam_policy_document" "ecs_assume" {
@@ -44,8 +62,10 @@ data "aws_iam_policy_document" "ecs_assume" {
 }
 
 resource "aws_iam_role" "ecs_execution" {
-  name               = "${local.name_prefix}-ecs-execution"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+  name                 = "${local.name_prefix}-ecs-execution"
+  path                 = "/${local.name_prefix}/"
+  permissions_boundary = aws_iam_policy.project_permissions_boundary.arn
+  assume_role_policy   = data.aws_iam_policy_document.ecs_assume.json
 
   tags = { Name = "${local.name_prefix}-ecs-execution" }
 }
@@ -58,22 +78,26 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
 }
 
 resource "aws_iam_role" "ecs_task" {
-  name               = "${local.name_prefix}-ecs-task"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+  name                 = "${local.name_prefix}-ecs-task"
+  path                 = "/${local.name_prefix}/"
+  permissions_boundary = aws_iam_policy.project_permissions_boundary.arn
+  assume_role_policy   = data.aws_iam_policy_document.ecs_assume.json
 
   tags = { Name = "${local.name_prefix}-ecs-task" }
 }
 
-# Application task role (INF-003): read ONLY the versioned synthetic
-# artifact path + metadata-only telemetry; explicit denies for artifact
-# writes and secret stores (see infra/policies/task-role.json).
+# Application task role (INF-003, hardened 2026-11-16): the API loads its
+# synthetic artifact from the image filesystem once at startup and touches
+# no AWS service at request time, so the role carries NO Allow statements —
+# only explicit Deny guardrails for artifact writes and secret stores
+# (see infra/policies/task-role.json; the offline tests assert the absence
+# of S3/CloudWatch allows).
 resource "aws_iam_role_policy" "ecs_task" {
-  name = "versioned-synthetic-artifact-and-telemetry"
+  name = "denied-artifact-writes-and-secret-stores"
   role = aws_iam_role.ecs_task.id
   policy = templatefile("${path.module}/policies/task-role.json", {
     artifact_bucket_arn = aws_s3_bucket.artifacts.arn
     artifact_prefix     = local.artifact_prefix
-    metrics_namespace   = local.metrics_namespace
   })
 }
 
@@ -94,7 +118,9 @@ locals {
 resource "aws_iam_role" "gha_plan" {
   count = var.enable_github_oidc ? 1 : 0
 
-  name = "${local.name_prefix}-gha-plan"
+  name                 = "${local.name_prefix}-gha-plan"
+  path                 = "/${local.name_prefix}/"
+  permissions_boundary = aws_iam_policy.project_permissions_boundary.arn
   assume_role_policy = templatefile("${path.module}/policies/oidc-trust.json", {
     account_id       = data.aws_caller_identity.current.account_id
     sub_pattern_json = jsonencode(local.oidc_subs.plan)
@@ -118,7 +144,9 @@ resource "aws_iam_role_policy" "gha_plan" {
 resource "aws_iam_role" "gha_apply" {
   count = var.enable_github_oidc ? 1 : 0
 
-  name = "${local.name_prefix}-gha-apply"
+  name                 = "${local.name_prefix}-gha-apply"
+  path                 = "/${local.name_prefix}/"
+  permissions_boundary = aws_iam_policy.project_permissions_boundary.arn
   assume_role_policy = templatefile("${path.module}/policies/oidc-trust.json", {
     account_id       = data.aws_caller_identity.current.account_id
     sub_pattern_json = jsonencode(local.oidc_subs.apply)
@@ -133,11 +161,12 @@ resource "aws_iam_role_policy" "gha_apply" {
   name = "terraform-apply-scoped"
   role = aws_iam_role.gha_apply[0].id
   policy = templatefile("${path.module}/policies/ci-apply-policy.json", {
-    state_bucket_arn    = "arn:aws:s3:::${var.state_bucket_name}"
-    lock_table_arn      = "arn:aws:dynamodb:${var.aws_region}:*:table/${var.state_lock_table}"
-    artifact_bucket_arn = aws_s3_bucket.artifacts.arn
-    name_prefix         = local.name_prefix
-    ecr_repo_arn        = aws_ecr_repository.api.arn
+    state_bucket_arn         = "arn:aws:s3:::${var.state_bucket_name}"
+    lock_table_arn           = "arn:aws:dynamodb:${var.aws_region}:*:table/${var.state_lock_table}"
+    artifact_bucket_arn      = aws_s3_bucket.artifacts.arn
+    name_prefix              = local.name_prefix
+    ecr_repo_arn             = aws_ecr_repository.api.arn
+    permissions_boundary_arn = aws_iam_policy.project_permissions_boundary.arn
   })
 }
 
@@ -145,7 +174,9 @@ resource "aws_iam_role_policy" "gha_apply" {
 resource "aws_iam_role" "gha_push" {
   count = var.enable_github_oidc ? 1 : 0
 
-  name = "${local.name_prefix}-gha-push"
+  name                 = "${local.name_prefix}-gha-push"
+  path                 = "/${local.name_prefix}/"
+  permissions_boundary = aws_iam_policy.project_permissions_boundary.arn
   assume_role_policy = templatefile("${path.module}/policies/oidc-trust.json", {
     account_id       = data.aws_caller_identity.current.account_id
     sub_pattern_json = jsonencode(local.oidc_subs.push)

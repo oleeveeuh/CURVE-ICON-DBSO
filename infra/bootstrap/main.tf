@@ -136,3 +136,43 @@ resource "aws_dynamodb_table" "state_locks" {
 
   tags = { Name = local.lock_table_name }
 }
+
+# --- Persistent budget (INF-008, moved here 2026-11-16) -----------------------
+#
+# The monthly budget previously lived in the application stack and was
+# destroyed with it — leaving the retained state store unprotected between
+# milestones. It now lives in the retained bootstrap stack: the cost
+# guardrail outlives every application destroy, and this stack's own
+# retention policy is the deliberate exception documented in the runbook.
+
+resource "aws_budgets_budget" "monthly_cost" {
+  name         = "curve-icon-dbso-monthly-cost" # deliberately name_prefix-free: persists across environments
+  budget_type  = "COST"
+  limit_amount = var.budget_monthly_limit
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 5 # INF-008: $5 actual spend
+    threshold_type             = "ABSOLUTE_VALUE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.budget_alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 20 # INF-008: $20 forecast
+    threshold_type             = "ABSOLUTE_VALUE"
+    notification_type          = "FORECASTED"
+    subscriber_email_addresses = [var.budget_alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 20 # INF-008: $20 actual (hard ceiling breached)
+    threshold_type             = "ABSOLUTE_VALUE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.budget_alert_email]
+  }
+}

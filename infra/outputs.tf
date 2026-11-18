@@ -36,10 +36,8 @@ output "log_group_name" {
   value       = aws_cloudwatch_log_group.api.name
 }
 
-output "budget_name" {
-  description = "Monthly cost budget with $5/$20 notifications (INF-008)."
-  value       = aws_budgets_budget.monthly_cost.name
-}
+# budget_name MOVED to the retained bootstrap stack with the budget itself
+# (2026-11-16): see infra/bootstrap/outputs.tf.
 
 output "alarm_names" {
   description = "OBS-002 alarm names (actions: SNS topic below; triage: docs/runbook.md)."

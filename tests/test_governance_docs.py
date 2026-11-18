@@ -5,9 +5,9 @@ NEVER blocked by an approval or verification workflow. They fail if a
 blocking approval/verification gate reappears in the governance
 documents or the external-data script, if institutional requirements
 are recorded as anything other than ``NOT_APPLICABLE``, if the
-no-endorsement disclaimer is lost, or if a credential pattern leaks
-into documentation. Subject-identifier patterns in documentation
-produce a non-blocking warning (a reminder, never a gate).
+no-endorsement disclaimer is lost, if a credential pattern leaks into
+documentation, or if a subject-identifier pattern appears in tracked
+docs (blocking since the 2026-11-16 pre-publication review).
 
 Everything here is offline and reads only tracked repository files.
 """
@@ -15,7 +15,6 @@ Everything here is offline and reads only tracked repository files.
 from __future__ import annotations
 
 import re
-import warnings
 from pathlib import Path
 
 import pytest
@@ -188,7 +187,7 @@ def test_decision_log_covers_dd_001_through_dd_006():
 ])
 def test_no_credential_patterns_in_public_docs(pattern_name, pattern):
     """Credential patterns in public documentation are a security issue and
-    stay blocking (unlike privacy notices, which are non-blocking)."""
+    stay blocking (so do subject identifiers since the 2026-11-16 review)."""
     files = sorted(DOCS.rglob("*.md")) + [REPO_ROOT / "README.md"]
     for path in files:
         match = pattern.search(path.read_text())
@@ -197,22 +196,14 @@ def test_no_credential_patterns_in_public_docs(pattern_name, pattern):
         )
 
 
-def test_subject_identifier_pattern_in_public_docs_is_a_non_blocking_notice():
-    """A subject-code pattern in documentation produces a WARNING — a
-    reminder of the owner's privacy responsibilities, never a gate (the
-    test passes either way; docs/approvals.md)."""
+def test_subject_identifier_pattern_in_public_docs_is_blocking():
+    """Subject codes in public documentation are BLOCKING since the
+    2026-11-16 pre-publication review (scripts/security_scan.py fails on
+    DBS_bG<digits> in tracked files) — the docs tree must contain none."""
     pattern = re.compile(r"DBS_bG\d")
     files = sorted(DOCS.rglob("*.md")) + [REPO_ROOT / "README.md"]
-    hits = []
     for path in files:
-        if pattern.search(path.read_text()):
-            hits.append(f"{path.relative_to(REPO_ROOT)}: subject-identifier pattern")
-    if hits:
-        for hit in hits:
-            warnings.warn(
-                f"non-blocking privacy notice — {hit} "
-                "(docs/approvals.md owner responsibilities)",
-                UserWarning,
-                stacklevel=1,
-            )
-    assert True, "privacy notices never block repository work"
+        assert not pattern.search(path.read_text()), (
+            f"subject-identifier pattern found in {path.relative_to(REPO_ROOT)} "
+            "(blocking since 2026-11-16; remove the code from the public track)"
+        )

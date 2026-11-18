@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Secret scanner with non-blocking privacy notices (CIC-007, amended).
+"""Secret scanner with blocking privacy boundaries (CIC-007, amended
+2026-11-16 pre-publication review).
 
 Scans GIT-TRACKED files for:
 
@@ -7,18 +8,29 @@ Scans GIT-TRACKED files for:
    generic credential assignments) and credential file types
    (.pem/.key/.p12/.pfx/.crt/.tfstate) — **blocking**: a leaked
    credential is a security vulnerability, so these fail the scan;
-2. subject identifiers matching ``DBS_bG<digits>`` (plan §5.3) and
-   data/model/state file types (raw data, model pickles, databases) —
-   **non-blocking notices** per the repository's standing policy
-   (docs/approvals.md): repository work is never prevented by a
-   privacy check, so these print WARN lines and never fail the scan.
+2. subject identifiers matching ``DBS_bG<digits>`` (plan §5.3) —
+   **blocking** as of 2026-11-16: a real subject code in the public
+   track is a privacy failure, not a style suggestion. The only
+   exemption is the archived ``legacy/`` directory (historical evidence
+   documented in docs/data_access.md);
+3. data/model/database file types (raw data, spreadsheets, serialized
+   models, databases) — **blocking** unless the exact repo-relative
+   path is explicitly allowlisted (``--allow-data-file`` / module
+   constant). The tracked tree must contain no data files; the
+   allowlist is the auditable exception path, never a default.
+
+Blocking scope covers pull requests too: CI runs this scanner over the
+WHOLE tracked tree on every push and pull_request, so any PR content
+that would introduce a finding fails before merge — there is no separate
+diff-only mode to maintain.
 
 Design constraints:
 
 * stdlib only (no third-party dependency in the trust-critical path);
 * findings print file:line + pattern NAME only — never the matched
   content, so the scanner itself cannot leak a secret into logs;
-* exit code 1 only for blocking (credential) findings, 0 otherwise;
+* exit code 1 for ANY blocking finding (credential OR privacy), 0
+  otherwise;
 * ``--paths`` accepts explicit files/directories for fixture tests;
   the default scans ``git ls-files`` (exactly what CI would commit).
 
@@ -60,9 +72,10 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
 ]
 
-# Subject identifiers (plan §5.3). NOTICE-ONLY per docs/approvals.md: a
-# privacy check never blocks repository work, so a match prints a WARN
-# line instead of failing. The digit-anchored form keeps the literal
+# Subject identifiers (plan §5.3). BLOCKING since the 2026-11-16
+# pre-publication review: a subject code must never reach the public
+# track, so a match fails the scan (the archived legacy/ directory keeps
+# its documented exemption). The digit-anchored form keeps the literal
 # "DBS_bG*" pattern descriptions in documentation from self-matching.
 SUBJECT_IDENTIFIER_PATTERN = re.compile(r"DBS_bG\d")
 
@@ -90,8 +103,10 @@ CREDENTIAL_SUFFIXES = (
     ".crt",
 )
 
-# Data/model/database file types — NOTICE-ONLY (privacy guidance; see
-# docs/approvals.md "Owner responsibilities (non-blocking guidance)").
+# Data/model/database file types — BLOCKING unless explicitly allowlisted
+# (2026-11-16 review: raw data, spreadsheets, databases, and serialized
+# models never belong in the public track; the allowlist below is the
+# auditable exception path and stays empty by default).
 DATA_SUFFIXES = (
     ".csv",
     ".mat",
@@ -106,6 +121,11 @@ DATA_SUFFIXES = (
     ".sqlite3",
     ".db",
 )
+
+# Repo-relative paths (forward slashes) explicitly allowed to be data-type
+# files. Keep this EMPTY unless a specific, documented file genuinely must
+# be tracked — every entry is an auditable privacy exception.
+DATA_FILE_ALLOWLIST: frozenset[str] = frozenset()
 
 MAX_FILE_BYTES = 5_000_000  # skip absurd files; lock files are well under this
 
@@ -154,11 +174,15 @@ def is_identifier_exempt(path: Path) -> bool:
     return any(parent.name == "legacy" for parent in path.parents)
 
 
-def scan_files(files: list[Path]) -> tuple[list[str], list[str]]:
+def scan_files(
+    files: list[Path], allowlisted_data: frozenset[str] = DATA_FILE_ALLOWLIST
+) -> tuple[list[str], list[str]]:
     """Return (blocking, notice) human-readable finding lines.
 
     Lines carry file:line (content patterns) or file (types) plus the
-    finding NAME — never the matched content.
+    finding NAME — never the matched content. Subject identifiers and
+    non-allowlisted data file types are BLOCKING; an allowlisted data
+    file prints a WARN notice so its presence stays visible.
     """
     blocking: list[str] = []
     notices: list[str] = []
@@ -166,12 +190,27 @@ def scan_files(files: list[Path]) -> tuple[list[str], list[str]]:
         rel = rel_display(path)
         if path.is_dir() or not path.is_file():
             continue
+        rel_posix = rel.replace("\\", "/")
+        # Allowlist match key: repo-relative inside the repository, absolute
+        # outside it (fixture trees in temporary directories).
+        try:
+            match_key = path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            match_key = path.resolve().as_posix()
         suffix = path.suffix.lower()
         if suffix in CREDENTIAL_SUFFIXES:
             blocking.append(f"{rel}: credential-file-type ({suffix})")
         elif suffix in DATA_SUFFIXES:
-            notices.append(f"{rel}: data-file-type notice ({suffix}) — "
-                           "non-blocking reminder (docs/approvals.md)")
+            if match_key in allowlisted_data:
+                notices.append(f"{rel}: allowlisted data file ({suffix}) — "
+                               "documented exception, still worth a look")
+            else:
+                blocking.append(
+                    f"{rel}: data-file-type ({suffix}) — raw data, spreadsheets, "
+                    "databases and serialized models never belong in the public "
+                    "track; move the file out or allowlist it explicitly via "
+                    "--allow-data-file (docs/data_access.md)"
+                )
         # No `continue` after the type checks: a private key inside a .pem
         # is still worth reporting by pattern; keep scanning the content.
         try:
@@ -184,7 +223,7 @@ def scan_files(files: list[Path]) -> tuple[list[str], list[str]]:
             continue
 
         exempt_ids = is_identifier_exempt(path)
-        content_exempt = rel.replace("\\", "/") in CONTENT_EXEMPT_FILES
+        content_exempt = rel_posix in CONTENT_EXEMPT_FILES
         for lineno, line in enumerate(text.splitlines(), start=1):
             if content_exempt:
                 continue  # the negative-test fixture file: patterns are its content
@@ -192,9 +231,11 @@ def scan_files(files: list[Path]) -> tuple[list[str], list[str]]:
                 if pattern.search(line):
                     blocking.append(f"{rel}:{lineno}: secret-pattern ({name})")
             if not exempt_ids and SUBJECT_IDENTIFIER_PATTERN.search(line):
-                notices.append(f"{rel}:{lineno}: subject-identifier notice "
-                               "(DBS_bG<digits>) — non-blocking reminder "
-                               "(docs/approvals.md)")
+                blocking.append(
+                    f"{rel}:{lineno}: subject-identifier (DBS_bG<digits>) — "
+                    "a real subject code must never enter the public track "
+                    "(docs/data_access.md incident response)"
+                )
     return blocking, notices
 
 
@@ -206,6 +247,14 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         help="explicit files/directories to scan (default: git-tracked files)",
     )
+    parser.add_argument(
+        "--allow-data-file",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="repo-relative data-type file to allow (repeatable); every "
+             "allowlisted file still prints a WARN notice",
+    )
     args = parser.parse_args(argv)
 
     files = iter_files(args.paths)
@@ -213,7 +262,10 @@ def main(argv: list[str] | None = None) -> int:
         print("security-scan: no files to scan", file=sys.stderr)
         return 2
 
-    blocking, notices = scan_files(files)
+    allowlisted = frozenset(
+        Path(p).as_posix() for p in (*DATA_FILE_ALLOWLIST, *args.allow_data_file)
+    )
+    blocking, notices = scan_files(files, allowlisted_data=allowlisted)
     for line in notices:
         print(f"security-scan: WARN — {line}")
     if blocking:
@@ -225,8 +277,9 @@ def main(argv: list[str] | None = None) -> int:
             "from the public track and follow docs/data_access.md incident response."
         )
         return 1
-    print(f"security-scan: OK ({len(files)} files scanned; no secrets or "
-          f"credential file types; {len(notices)} non-blocking privacy notice(s))")
+    print(f"security-scan: OK ({len(files)} files scanned; no secrets, "
+          f"subject identifiers, or non-allowlisted data files; "
+          f"{len(notices)} allowlisted-file notice(s))")
     return 0
 
 

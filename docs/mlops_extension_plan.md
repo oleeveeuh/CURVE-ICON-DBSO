@@ -447,7 +447,7 @@ update, not a gate.
 
 ### Phase 1 — Scientific and reproducibility hardening
 
-**Status:** Synthetic-path implementation completed 2026-11-13 (uncommitted working tree; commit decisions rest with the owner). The kinematic evaluation script exists but has NOT been executed; external-data guidance is non-blocking (see the amendment). MLflow lineage verified only against a local synthetic store.  
+**Status:** COMPLETE and executed (updated 2026-11-16 after the corrected rerun). Synthetic-path implementation completed 2026-11-13; the first authorized real-data run executed 2026-11-16, its permutation scoring defect was found and fixed (null now scored against permuted targets; regression-tested), and the corrected 5,000-permutation rerun from identical recorded inputs produced a clean NEGATIVE result — no model beats both baselines on both MAE and RMSE; best raw permutation p = .064, Holm-adjusted .642. Sanitized report: [`docs/results_kinematic_real.md`](results_kinematic_real.md). External-data guidance remains non-blocking; MLflow lineage verified against a local synthetic store (not exercised for the real run — local store only).
 **Estimated effort:** 2–4 days  
 **Dependencies:** Phase R; for external-data analysis, the owner-responsibility guidance applies (non-blocking)
 

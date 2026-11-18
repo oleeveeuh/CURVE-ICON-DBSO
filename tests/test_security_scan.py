@@ -1,11 +1,12 @@
-"""Negative fixtures for the scanner (CIC-007, plan §11.2; amended 2026-11-16).
+"""Negative fixtures for the scanner (CIC-007, plan §11.2; amended
+2026-11-16 pre-publication review).
 
 Plants controlled fake findings in temporary directories and asserts the
-severity behavior — credential findings (secrets, credential file types)
-are BLOCKING (exit 1); privacy notices (subject identifiers, data file
-types) are NON-BLOCKING (exit 0 with a WARN line) per docs/approvals.md.
-Also asserts the scanner never echoes the secret content into its own
-output, and that the tracked repository tree scans clean.
+severity behavior — credential findings (secrets, credential file types),
+subject identifiers, and non-allowlisted data file types are ALL BLOCKING
+(exit 1); an explicitly allowlisted data file stays visible as a WARN but
+does not fail. Also asserts the scanner never echoes the secret content
+into its own output, and that the tracked repository tree scans clean.
 """
 
 from __future__ import annotations
@@ -61,25 +62,49 @@ def test_planted_github_token_is_caught(tmp_path):
     assert "github-token" in result.stdout
 
 
-def test_planted_subject_identifier_is_a_non_blocking_notice(tmp_path):
-    """A subject-code match prints a WARN line but never fails the scan —
-    privacy notices never block repository work (docs/approvals.md)."""
+def test_planted_subject_identifier_is_blocking(tmp_path):
+    """A subject-code match FAILS the scan (2026-11-16 review: a real
+    identifier in the public track is a privacy breach, not a warning)."""
     tree = _tree(tmp_path, ("outputs/results.csv", "code,DBS_bG01,mae\n1,0.5,0.2\n"))
     result = _run(tree)
-    assert result.returncode == 0, (
-        f"subject identifiers must be non-blocking: {result.stdout}"
+    assert result.returncode == 1, (
+        f"subject identifiers must be blocking: {result.stdout}"
     )
-    assert "WARN" in result.stdout
     assert "subject-identifier" in result.stdout
+    assert "DBS_bG01" not in result.stdout, "scanner must not echo the identifier"
 
 
-def test_planted_data_file_type_is_a_non_blocking_notice(tmp_path):
-    """A data file type (privacy guidance) warns without failing."""
+def test_planted_data_file_type_is_blocking(tmp_path):
+    """A data file type fails the scan unless explicitly allowlisted."""
     tree = _tree(tmp_path, ("data/cohort.mat", "MATLAB binary junk"))
     result = _run(tree)
-    assert result.returncode == 0, f"data file types must be non-blocking: {result.stdout}"
-    assert "WARN" in result.stdout
+    assert result.returncode == 1, f"data file types must be blocking: {result.stdout}"
     assert "data-file-type" in result.stdout
+
+
+def test_allowlisted_data_file_warns_without_failing(tmp_path):
+    """The auditable exception path: an exact-path allowlist entry keeps the
+    file visible as a WARN while passing the scan. Outside the repository
+    (fixture trees) the exact path is the absolute path."""
+    tree = _tree(tmp_path, ("data/cohort.mat", "MATLAB binary junk"))
+    result = _run_with_allowlist(tree, allowed=str(tree / "data" / "cohort.mat"))
+    assert result.returncode == 0, f"allowlisted data file must pass: {result.stdout}"
+    assert "WARN" in result.stdout
+    assert "allowlisted data file" in result.stdout
+    # A DIFFERENT data file (not on the allowlist) still fails.
+    tree2 = _tree(tmp_path, ("data/other.mat", "more junk"))
+    result2 = _run_with_allowlist(tree2, allowed=str(tree / "data" / "cohort.mat"))
+    assert result2.returncode == 1, "non-allowlisted data files must still fail"
+
+
+def _run_with_allowlist(*paths: Path, allowed: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(SCANNER), "--allow-data-file", allowed,
+         "--paths", *[str(p) for p in paths]],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def test_credential_file_type_is_blocking(tmp_path):
@@ -125,8 +150,9 @@ def test_clean_tree_passes(tmp_path):
 
 def test_this_repository_tree_scans_clean():
     """The real CI gate: the tracked tree must produce no BLOCKING findings
-    (no secrets, no credential file types). Privacy notices are printed but
-    do not fail."""
+    (no secrets, no subject identifiers, no non-allowlisted data file
+    types). Runs on every push and pull_request, so PR content is covered
+    by the whole-tree gate before merge."""
     result = subprocess.run(
         [sys.executable, str(SCANNER)],
         cwd=REPO_ROOT,

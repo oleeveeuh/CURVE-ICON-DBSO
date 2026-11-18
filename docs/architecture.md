@@ -79,6 +79,10 @@ The image is the serving source of truth (`CURVE_ARTIFACT_DIR=/app/artifact`,
 trained during the build); the S3 copy is a lineage archive. Both are
 synthetic-only by policy.
 
+## 2b. Follow-on study flow (frozen contract v1.0.0)
+
+`protocol.py` (frozen machine-readable contract) → `neural_features`/`glove_phenotyping`/`signal_qc` (frozen feature extraction) → `subject_modeling` (nested subject-grouped REST/DELTA arms) → `move_modeling` + `dmd_representation` (window-level MOVE arm) → `scripts/run_followon_subject_modeling.py` and `scripts/run_followon_move_modeling.py` (local-only versioned runs). Executed 2026-11-16: sanitized aggregates in `docs/results_followon_real.md`.
+
 ## 3. CI/CD
 
 ```mermaid

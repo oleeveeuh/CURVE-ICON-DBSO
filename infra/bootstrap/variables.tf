@@ -9,3 +9,19 @@ variable "owner" {
   type        = string
   default     = "oleeveeuh"
 }
+
+variable "budget_alert_email" {
+  description = "Email address for AWS Budgets notifications at $5/$20 (INF-008). REQUIRED — the budget is RETAINED across application-stack destroys (2026-11-16 review), so pass the real recipient at apply time."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.budget_alert_email))
+    error_message = "budget_alert_email must look like an email address."
+  }
+}
+
+variable "budget_monthly_limit" {
+  description = "Monthly AWS Budgets limit in USD (INF-008: notifications at $5 and $20; ceiling $20)."
+  type        = string
+  default     = "20"
+}

@@ -106,8 +106,14 @@ def test_convert_writes_npz_and_excludes_explicitly(raw_tree, tmp_path, capsys):
         "SUB_B (covariate missing) and SUB_C (no .mat) are excluded"
     )
     captured = capsys.readouterr()
-    assert "EXCLUDED: SUB_B" in captured.out and "missing/NaN" in captured.out
-    assert "EXCLUDED: SUB_C" in captured.out and "no '" in captured.out
+    # Ordinal run labels name the recordings in logs; reasons stay explicit.
+    assert "EXCLUDED: recording #002" in captured.out and "missing/NaN" in captured.out
+    assert "EXCLUDED: recording #003" in captured.out and "no '" in captured.out
+    # Log hygiene (2026-11-16 review): NO log line may carry a subject code.
+    for code in ("SUB_A", "SUB_B", "SUB_C"):
+        assert code not in captured.out, (
+            f"conversion logs must use ordinal labels, not subject codes ({code})"
+        )
 
     with np.load(out / "SUB_A.npz", allow_pickle=False) as data:
         assert str(data["subject"]) == "SUB_A"

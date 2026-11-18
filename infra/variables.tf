@@ -55,14 +55,8 @@ variable "desired_count" {
   }
 }
 
-variable "budget_monthly_limit" {
-  description = "Monthly AWS Budgets limit in USD (INF-008: notifications at $5 and $20; ceiling $20)."
-  type        = string
-  default     = "20"
-}
-
 variable "budget_alert_email" {
-  description = "Email address for AWS Budgets notifications at $5/$20 (INF-008). REQUIRED — replace the placeholder in environments/dev.tfvars with the real recipient BEFORE any apply (the deploy workflow preflight and Prompt 6 review enforce this; plans are not blocked)."
+  description = "Email address for alarm notifications (SNS subscription; the persistent budget moved to the retained bootstrap stack on 2026-11-16). REQUIRED — replace the placeholder in environments/dev.tfvars with the real recipient BEFORE any apply."
   type        = string
 
   validation {
