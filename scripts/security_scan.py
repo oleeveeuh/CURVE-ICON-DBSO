@@ -125,7 +125,13 @@ DATA_SUFFIXES = (
 # Repo-relative paths (forward slashes) explicitly allowed to be data-type
 # files. Keep this EMPTY unless a specific, documented file genuinely must
 # be tracked — every entry is an auditable privacy exception.
-DATA_FILE_ALLOWLIST: frozenset[str] = frozenset()
+DATA_FILE_ALLOWLIST: frozenset[str] = frozenset({
+    # Measured aggregate load-test statistics (per-interval aggregates only,
+    # never payloads) and the deterministic synthetic demo metrics — the two
+    # committed evidence files the README and docs/deployment_report.md cite.
+    "locust/results_stats_history.csv",
+    "docs/synthetic_demo_metrics.csv",
+})
 
 MAX_FILE_BYTES = 5_000_000  # skip absurd files; lock files are well under this
 

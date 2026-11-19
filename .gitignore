@@ -7,6 +7,9 @@ outputs/
 *.edf
 *.nii
 *.nii.gz
+# Committed evidence exceptions (allowlisted in scripts/security_scan.py):
+!docs/synthetic_demo_metrics.csv
+!locust/results_stats_history.csv
 
 # --- Python -------------------------------------------------------------------
 __pycache__/

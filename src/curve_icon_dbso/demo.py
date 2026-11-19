@@ -79,8 +79,9 @@ def main(argv: list[str] | None = None) -> int:
         "--permutations", type=int, default=25,
         help="Subject-level label permutations through the full CV workflow. "
              "This demo default (25) is a fast pipeline-verification count; "
-             "real evaluation runs must use the SCI-009 protocol default of "
-             f"at least {PERMUTATION_N_PERMUTATIONS} (pass --permutations "
+             "real evaluation runs must clear the SCI-009 floor of 200, and "
+             "reporting p-values requires at least the protocol's reporting "
+             f"minimum of {PERMUTATION_N_PERMUTATIONS} (pass --permutations "
              f"{PERMUTATION_N_PERMUTATIONS}).",
     )
     parser.add_argument(

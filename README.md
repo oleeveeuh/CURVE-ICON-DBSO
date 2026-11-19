@@ -59,7 +59,7 @@ clinical model:
 | Modeling | Linear, tree-based, kernel, Bayesian, Gaussian-process, XGBoost, lagged decoding, DMD, and contrastive-representation components | No subject-level model met the promotion rule; movement decoder r = .063 but MAE .721 lost to persistence (.282) and block mean (.629) |
 | Production ML | Versioned feature schema, deterministic synthetic model artifact, hash-verified loading, FastAPI batch inference, Docker, and metadata-only logging | 189.5 MB image; 0.85 s median cold start; order-preserving batches of 1–256 rows |
 | Cloud/MLOps | Terraform-managed CloudFront → ALB → ECS Fargate, CI security/privacy gates, SBOM and vulnerability checks, CloudWatch alarms, load/drift/rollback exercises | 34,177 requests, 0 failures, p95 110 ms, zero restarts; rollback in about 70 s with zero dropped requests |
-| Engineering quality | Reproducible lock file, Python 3.11/3.12 CI, synthetic end-to-end fixtures, leakage and governance tests | 490 offline tests passed in the definitive local run; live GitHub status is shown by the Actions badge below |
+| Engineering quality | Reproducible lock file, Python 3.11/3.12 CI, synthetic end-to-end fixtures, leakage and governance tests | 495 offline tests in the locked quickstart environment (below); live GitHub status is shown by the Actions badge |
 
 [![CI](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml/badge.svg)](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml)
 
@@ -178,8 +178,9 @@ retracted; their figures are archived under
 **Follow-on three-arm study (frozen contract v1.0.0 → corrective v1.0.1, 2026-11-18):** a fully negative, exploratory result under the complete frozen matrix — **global null**: no subject-level block × model met the promotion rule (ten-test Holm family minimum adjusted p = 1.0); MOVE methodology transfer **NOT successful** (median r ≈ .06 with CI [.036, .109], but decoder MAE .721 vs persistence .282 and block-mean .629 — criterion failed in code); corrected circular and blockwise shift nulls both p = .002 (small above-null alignment, far below naive temporal references); DMD did not improve correlation over band power. The v1.0.0 run's partial verdicts are superseded by this corrective rerun (identical inputs, manifest-verified); sanitized aggregates: [`docs/results_followon_real.md`](docs/results_followon_real.md).
 
 What *is* verifiable is the machinery, on synthetic data
-(`figures/synthetic_oof_verification.png`; regenerate with the quick start below —
-seeded, byte-identical across runs):
+(`figures/synthetic_oof_verification.png`; committed metrics in
+[`docs/synthetic_demo_metrics.csv`](docs/synthetic_demo_metrics.csv); regenerate
+with the quick start below — seeded, byte-identical across runs):
 
 | Model (LOSO, synthetic cohort) | MAE | RMSE | R² | Pearson r |
 |---|---|---|---|---|
@@ -224,8 +225,9 @@ uv sync --locked --extra dev --extra api --extra tracking --extra analysis \
 # python3.11 -m venv .venv && source .venv/bin/activate && pip install -e ".[dev,api,tracking,analysis]"
 
 # deterministic synthetic end-to-end run (~seconds; adds bootstrap CIs and a
-# label-permutation null — raise --permutations to the protocol default of 200
-# for evaluation-grade runs)
+# label-permutation null — raise --permutations past the SCI-009 floor of 200;
+# reporting p-values requires the protocol's 1,000 reporting minimum, pinned
+# in curve_icon_dbso.protocol and tests/test_protocol_contract.py)
 curve-icon-demo --output-dir outputs/synthetic_demo
 
 # regenerate README figures
