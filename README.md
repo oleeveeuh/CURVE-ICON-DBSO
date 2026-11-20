@@ -59,7 +59,7 @@ clinical model:
 | Modeling | Linear, tree-based, kernel, Bayesian, Gaussian-process, XGBoost, lagged decoding, DMD, and contrastive-representation components | No subject-level model met the promotion rule; movement decoder r = .063 but MAE .721 lost to persistence (.282) and block mean (.629) |
 | Production ML | Versioned feature schema, deterministic synthetic model artifact, hash-verified loading, FastAPI batch inference, Docker, and metadata-only logging | 189.5 MB image; 0.85 s median cold start; order-preserving batches of 1–256 rows |
 | Cloud/MLOps | Terraform-managed CloudFront → ALB → ECS Fargate, CI security/privacy gates, SBOM and vulnerability checks, CloudWatch alarms, load/drift/rollback exercises | 34,177 requests, 0 failures, p95 110 ms, zero restarts; rollback in about 70 s with zero dropped requests |
-| Engineering quality | Reproducible lock file, Python 3.11/3.12 CI, synthetic end-to-end fixtures, leakage and governance tests | 495 offline tests in the locked quickstart environment (below); live GitHub status is shown by the Actions badge |
+| Engineering quality | Reproducible lock file, Python 3.11/3.12 CI, synthetic end-to-end fixtures, leakage and governance tests | 589 offline tests in the locked quickstart environment (below; 6 heavy scientific-tier tests carry the `slow` marker); live GitHub status is shown by the Actions badge |
 
 [![CI](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml/badge.svg)](https://github.com/oleeveeuh/CURVE-ICON-DBSO/actions/workflows/ci.yml)
 
@@ -176,6 +176,21 @@ retracted; their figures are archived under
 [`figures/archive/`](figures/archive/README.md) as documentation of the defect.
 
 **Follow-on three-arm study (frozen contract v1.0.0 → corrective v1.0.1, 2026-11-18):** a fully negative, exploratory result under the complete frozen matrix — **global null**: no subject-level block × model met the promotion rule (ten-test Holm family minimum adjusted p = 1.0); MOVE methodology transfer **NOT successful** (median r ≈ .06 with CI [.036, .109], but decoder MAE .721 vs persistence .282 and block-mean .629 — criterion failed in code); corrected circular and blockwise shift nulls both p = .002 (small above-null alignment, far below naive temporal references); DMD did not improve correlation over band power. The v1.0.0 run's partial verdicts are superseded by this corrective rerun (identical inputs, manifest-verified); sanitized aggregates: [`docs/results_followon_real.md`](docs/results_followon_real.md).
+
+**Adaptive-transfer v2 study (protocol frozen; no real-data run yet).** A
+separately versioned, explicitly exploratory v2 protocol
+([`docs/adaptive_transfer_protocol.md`](docs/adaptive_transfer_protocol.md),
+contract `curve_icon_dbso.transfer.contract` v2.1.0, hash-pinned) adapts the
+cross-patient movement-decoding methodology to this dataset: REST/MOVE
+detection, continuous decoding against causal kinematic baselines,
+zero-shot vs few-shot calibration as separate endpoints, and event-level
+tap analyses — all under the same subject-held-out discipline. Calibration
+and test spans are processed independently end to end (span-local,
+offline-retrospective; pinned by adversarial leakage tests). The v1.0.1
+contract and results above are immutable history; the v2 real-data run has
+not been executed and requires explicit owner authorization (a
+`--definitive` driver run; every reduced setting is a smoke run that
+cannot write the public results document).
 
 What *is* verifiable is the machinery, on synthetic data
 (`figures/synthetic_oof_verification.png`; committed metrics in
