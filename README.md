@@ -177,8 +177,10 @@ retracted; their figures are archived under
 
 **Follow-on three-arm study (frozen contract v1.0.0 → corrective v1.0.1, 2026-11-18):** a fully negative, exploratory result under the complete frozen matrix — **global null**: no subject-level block × model met the promotion rule (ten-test Holm family minimum adjusted p = 1.0); MOVE methodology transfer **NOT successful** (median r ≈ .06 with CI [.036, .109], but decoder MAE .721 vs persistence .282 and block-mean .629 — criterion failed in code); corrected circular and blockwise shift nulls both p = .002 (small above-null alignment, far below naive temporal references); DMD did not improve correlation over band power. The v1.0.0 run's partial verdicts are superseded by this corrective rerun (identical inputs, manifest-verified); sanitized aggregates: [`docs/results_followon_real.md`](docs/results_followon_real.md).
 
-**Adaptive-transfer v2 study (protocol frozen; no real-data run yet).** A
-separately versioned, explicitly exploratory v2 protocol
+**Adaptive-transfer v2 study (contract 2.1.0; definitive run 2026-11-20):** the
+deployment-shaped follow-up — does spatially aligned neural information
+transfer to unseen subjects, with and without brief calibration, against the
+temporal baselines? A separately versioned, explicitly exploratory v2 protocol
 ([`docs/adaptive_transfer_protocol.md`](docs/adaptive_transfer_protocol.md),
 contract `curve_icon_dbso.transfer.contract` v2.1.0, hash-pinned) adapts the
 cross-patient movement-decoding methodology to this dataset: REST/MOVE
@@ -186,11 +188,21 @@ detection, continuous decoding against causal kinematic baselines,
 zero-shot vs few-shot calibration as separate endpoints, and event-level
 tap analyses — all under the same subject-held-out discipline. Calibration
 and test spans are processed independently end to end (span-local,
-offline-retrospective; pinned by adversarial leakage tests). The v1.0.1
-contract and results above are immutable history; the v2 real-data run has
-not been executed and requires explicit owner authorization (a
-`--definitive` driver run; every reduced setting is a smoke run that
-cannot write the public results document).
+offline-retrospective; pinned by adversarial leakage tests; **no online or
+causal-inference claim**). The first authorized real-data run (definitive
+gate: exact 1,000-draw contract nulls, ablations and comparators on) executed
+the complete frozen matrix on all 31 recordings: **global null rejected** —
+3 of 4 primary endpoints SUCCESS (detection transfer median BAC .537, Holm
+p .003; zero-shot regression median r .073 vs persistence .899, Holm p .003;
+few-shot gain +.910, Holm p .002) while the Track B delta-MAE endpoint read
+.000 against the kinematic AR baseline (Holm 1.0 — the calibrated forecast is
+the autoregressive baseline, so neural features added no median error
+reduction) and both event-level claims failed; every ablation Holm 1.0.
+Sanitized aggregates: [`docs/results_adaptive_transfer_real.md`](docs/results_adaptive_transfer_real.md).
+The v1.0.1 contract and results above are immutable history; confirmatory
+status is reserved for an external cohort under an unchanged contract
+(every reduced setting remains a smoke run that cannot write the public
+results document).
 
 What *is* verifiable is the machinery, on synthetic data
 (`figures/synthetic_oof_verification.png`; committed metrics in
